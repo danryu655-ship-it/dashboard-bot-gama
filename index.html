@@ -469,19 +469,7 @@
       .bot-panel-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
       .bot-status-line { display: flex; align-items: center; gap: 9px; font-size: 18px; font-weight: 700; }
       .bot-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--gain); flex: none; }
-      .bot-dot.off { background: var(--loss); }
       .bot-desc { font-size: 14px; color: var(--ink-2); margin: 6px 0 0; max-width: 56ch; }
-      .switch {
-        flex: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer;
-        background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px 6px 6px; min-height: 46px;
-        font-family: var(--sans); font-size: 14px; font-weight: 700; color: var(--ink);
-      }
-      .switch .track { width: 46px; height: 26px; border-radius: 999px; background: var(--line); position: relative; flex: none; transition: background .15s ease; }
-      .switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,.25); transition: left .15s ease; }
-      .switch[aria-checked="true"] .track { background: var(--brand); }
-      .switch[aria-checked="true"] .knob { left: 23px; }
-      .switch:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-      @media (prefers-reduced-motion: reduce) { .switch .track, .switch .knob { transition: none; } }
       .bot-note { font-size: 13px; color: var(--ink-2); margin: 12px 0 0; }
       .bot-clarify {
         margin-top: 14px; background: var(--brand-soft); border: 1px solid var(--brand);
@@ -621,12 +609,9 @@
                 <div class="bot-status-line"><span class="bot-dot" id="botDot" aria-hidden="true"></span><span id="botStatusText">Pemantauan Live Aktif</span></div>
                 <p class="bot-desc" id="botStatusDesc">Bot memantau 8 posisi dan mengecek TP/SL tiap 15 menit. Pemantauan live dashboard berjalan — data diperbarui otomatis tiap 60 detik.</p>
               </div>
-              <button class="switch" id="botToggle" type="button" role="switch" aria-checked="true" aria-label="Aktifkan atau nonaktifkan pemantauan live bot di dashboard ini">
-                <span class="track" aria-hidden="true"><span class="knob"></span></span><span id="botToggleLabel">Live Aktif</span>
-              </button>
             </div>
             <div class="bot-clarify" role="note">
-              <strong>Saklar ini BUKAN saklar bot trading.</strong> Saklar di atas <strong>hanya</strong> menghidupkan / mematikan <strong>Pemantauan Live dashboard</strong> — yaitu auto-refresh data tiap 60 detik di halaman ini. Mematikannya <strong>tidak</strong> mematikan bot trading, dan menghidupkannya <strong>tidak</strong> mengaktifkan bot trading untuk dompet yang sedang terhubung. Bot trading berjalan sendiri di server tiap 15 menit dan tetap jalan walau dashboard ini ditutup atau wallet diganti.
+              <strong>Panel ini hanya menampilkan status — tidak ada saklar bot trading di dashboard ini.</strong> Dulu di sini ada saklar, tapi saklar itu pun <strong>hanya</strong> menghidupkan / mematikan <strong>Pemantauan Live dashboard</strong> — yaitu auto-refresh data tiap 60 detik di halaman ini — dan tidak pernah mengendalikan bot trading. Bot trading berjalan sendiri di server tiap 15 menit dan tetap jalan walau dashboard ini ditutup atau wallet diganti. Dompet yang terhubung di dashboard ini hanya bisa dilihat (view) dan dipakai untuk trading manual — tidak ada cara menghidupkan atau mematikan bot dari sini.
             </div>
             <div class="bot-wallet-rule" role="note">
               <strong>Bot hanya berdagang otomatis dari Dompet Bot (0x10bE…52bf). Dompet lain yang terhubung TIDAK ikut ditrading otomatis oleh bot — untuk dompet lain, pakai panel Test Manual (beli/jual manual dari dompet terhubung).</strong>
@@ -651,7 +636,7 @@
                 <li><span class="k">Jika token graduated</span><span class="v">berhenti untuk token itu</span></li>
               </ul>
             </div>
-            <p class="bot-note">Tombol di atas menjalankan / menghentikan pemantauan live dan auto-refresh di dashboard ini. Bot trading yang berjalan di latar tetap mengikuti aturan di bagian Aturan Bot — untuk menghentikannya sepenuhnya, hentikan proses bot-nya.</p>
+            <p class="bot-note">Pemantauan live dan auto-refresh di dashboard ini selalu berjalan dan tidak bisa dimatikan dari dashboard. Bot trading yang berjalan di latar tetap mengikuti aturan di bagian Aturan Bot — untuk menghentikannya sepenuhnya, hentikan proses bot-nya di server.</p>
           </div>
         </section>
 
@@ -2639,35 +2624,14 @@
            menggambar isi (masih tersembunyi); data live + auto-refresh 60 detik
            baru jalan setelah wallet terhubung (unlockDashboard). */
         var liveTimer = null;
-        var botEnabled = true;
         var dashboardUnlocked = false;
         function startLiveLoop() {
-          if (liveTimer || !dashboardUnlocked || !botEnabled) return;
+          if (liveTimer || !dashboardUnlocked) return;
           liveTimer = setInterval(refreshLive, 60000);
         }
         function stopLiveLoop() {
           if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
         }
-        (function () {
-          var tg = document.getElementById("botToggle");
-          if (!tg) return;
-          tg.addEventListener("click", function () {
-            botEnabled = !botEnabled;
-            tg.setAttribute("aria-checked", botEnabled ? "true" : "false");
-            document.getElementById("botToggleLabel").textContent = botEnabled ? "Live Aktif" : "Live Nonaktif";
-            document.getElementById("botDot").className = "bot-dot" + (botEnabled ? "" : " off");
-            document.getElementById("botStatusText").textContent = botEnabled ? "Pemantauan Live Aktif" : "Pemantauan Live Nonaktif";
-            document.getElementById("botStatusDesc").textContent = botEnabled
-              ? "Bot memantau 8 posisi dan mengecek TP/SL tiap 15 menit. Pemantauan live dashboard berjalan — data diperbarui otomatis tiap 60 detik."
-              : "Pemantauan live dashboard sedang dimatikan dari panel ini — auto-refresh berhenti dan angka yang tampil adalah data terakhir. Bot trading di latar tidak ikut berhenti dari tombol ini.";
-            document.getElementById("botRowLive").textContent = botEnabled ? "Jalan · refresh 60 detik" : "Berhenti";
-            if (botEnabled) { refreshLive(); startLiveLoop(); }
-            else {
-              stopLiveLoop();
-              setStatus("", "<b>Pemantauan live dijeda</b> — auto-refresh dimatikan dari panel Aktifkan Bot. Klik tombol Refresh atau aktifkan lagi bot untuk memperbarui data.");
-            }
-          });
-        })();
         renderAll();
       })();
     </script>
