@@ -1,0 +1,2017 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <script id="hatch-space-target">
+      (() => {
+        const params = new URLSearchParams(location.hash.slice(1));
+        const root = document.documentElement;
+        if (params.get("hatch_target") === "tv") root.dataset.hatchTarget = "tv";
+        const widget = params.get("hatch_view") === "widget";
+        root.dataset.hatchView = widget ? "widget" : "app";
+        if (widget) {
+          root.dataset.hatchWidget = params.get("hatch_widget") || "default";
+          root.dataset.hatchInstance = params.get("hatch_instance") || "";
+          const sizes = ["small", "medium", "large", "watch", "watch_round"];
+          root.dataset.hatchSize = sizes.includes(params.get("hatch_size")) ? params.get("hatch_size") : "small";
+          const style = document.createElement("style");
+          style.textContent = 'html[data-hatch-view="widget"], html[data-hatch-view="widget"] body { background: transparent; }';
+          document.head.prepend(style);
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Dashboard BOT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2rem; }
+
+      :root {
+        --bg: #f3f5f3;
+        --surface: #ffffff;
+        --surface-2: #e9ede9;
+        --ink: #17211a;
+        --ink-2: #4c5a50;
+        --line: #d5dcd5;
+        --brand: #0d7a4a;
+        --brand-soft: #e2f2e8;
+        --gain: #0d7a4a;
+        --loss: #c22f2f;
+        --loss-soft: #fbe9e7;
+        --warn: #9a6a00;
+        --warn-soft: #faf0d7;
+        --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        --sans: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0e130f;
+          --surface: #171e18;
+          --surface-2: #1f2921;
+          --ink: #e8efe9;
+          --ink-2: #a3b3a7;
+          --line: #2c3a2f;
+          --brand: #3ecf8e;
+          --brand-soft: #143325;
+          --gain: #3ecf8e;
+          --loss: #ff7a6e;
+          --loss-soft: #3a1d1a;
+          --warn: #e5b84f;
+          --warn-soft: #38300f;
+        }
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      html { scroll-behavior: smooth; }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+      .wrap { max-width: 1060px; margin: 0 auto; padding: 20px 16px 104px; }
+      .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+      .num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+      /* ---------- Header ---------- */
+      header.top { margin-bottom: 18px; }
+      .status-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+      .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gain); flex: none; }
+      .status-line .net { font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+      h1 { font-size: 30px; line-height: 1.15; margin: 0 0 6px; font-weight: 700; letter-spacing: -0.01em; }
+      .sub { color: var(--ink-2); font-size: 15px; margin: 0; max-width: 62ch; }
+      .snapshot {
+        margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2);
+        background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; max-width: 100%;
+      }
+      .snapshot .sdot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
+      .snapshot.is-live { border-color: var(--brand); color: var(--ink); background: var(--brand-soft); }
+      .snapshot.is-live .sdot { background: var(--gain); }
+      .snapshot.is-fail .sdot { background: var(--loss); }
+      .status-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+      .status-row .snapshot { margin-top: 12px; }
+      .refresh-btn {
+        margin-top: 12px; display: inline-flex; align-items: center; gap: 7px;
+        font-family: var(--sans); font-size: 14px; font-weight: 600; line-height: 1;
+        background: var(--brand); color: #fff; border: 1px solid var(--brand); border-radius: 8px;
+        padding: 8px 16px; min-height: 38px; cursor: pointer; white-space: nowrap;
+      }
+      @media (prefers-color-scheme: dark) { .refresh-btn { color: #08130c; } }
+      .refresh-btn:hover:not(:disabled) { opacity: .9; }
+      .refresh-btn:active:not(:disabled) { opacity: .8; }
+      .refresh-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+      .refresh-btn:disabled { opacity: .55; cursor: wait; }
+      .refresh-btn .rf-icon { display: inline-block; font-size: 16px; line-height: 1; }
+      .refresh-btn.is-loading .rf-icon { animation: rf-spin .9s linear infinite; }
+      @keyframes rf-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { .refresh-btn.is-loading .rf-icon { animation: none; } }
+
+      /* ---------- Stat grid ---------- */
+      .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 18px 0 8px; }
+      @media (min-width: 760px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+      .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+      .stat .label { font-size: 12.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 4px; }
+      .stat .value { font-family: var(--mono); font-size: 21px; font-weight: 600; line-height: 1.25; }
+      .stat .value small { font-size: 13px; color: var(--ink-2); font-weight: 500; }
+      .stat .note { font-size: 13px; color: var(--ink-2); margin-top: 3px; }
+      .gain { color: var(--gain); }
+      .loss { color: var(--loss); }
+
+      /* ---------- Sections ---------- */
+      section { margin-top: 30px; }
+      h2 { font-size: 20px; margin: 0 0 4px; font-weight: 700; letter-spacing: -0.01em; }
+      .sec-sub { color: var(--ink-2); font-size: 14.5px; margin: 0 0 14px; }
+
+      /* ---------- Charts ---------- */
+      .chart-card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+      .chart-card h3 { margin: 0 0 2px; font-size: 16px; font-weight: 700; }
+      .chart-card .c-sub { font-size: 13px; color: var(--ink-2); margin: 0 0 10px; }
+      .chart-card svg { width: 100%; height: auto; display: block; }
+      .chart-card svg text { font-family: var(--mono); }
+      .chart-card svg .ax { font-size: 11px; fill: var(--ink-2); }
+      .chart-card svg .vl { font-size: 10.5px; font-weight: 600; fill: var(--ink); }
+      .chart-card svg .tk { font-size: 11.5px; font-weight: 600; fill: var(--ink); }
+      .chart-card svg .grid { stroke: var(--line); stroke-width: 1; }
+      .chart-card svg .axis { stroke: var(--ink-2); stroke-width: 1; }
+      .chart-card svg .ref { stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 5 4; }
+      .chart-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); margin-top: 8px; }
+      .chart-legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+      /* ---------- Positions table ---------- */
+      .table-card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+      table { width: 100%; border-collapse: collapse; }
+      @media (min-width: 720px) {
+        table { table-layout: fixed; }
+        table col.c-tok { width: 23%; }
+        table col.c-amt { width: 13%; }
+        table col.c-price { width: 18%; }
+        table col.c-cap { width: 12%; }
+        table col.c-val { width: 15%; }
+        table col.c-stat { width: 19%; }
+      }
+      thead th {
+        text-align: left; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+        color: var(--ink-2); background: var(--surface-2); padding: 10px 14px; border-bottom: 1px solid var(--line);
+      }
+      tbody td { padding: 13px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+      tbody tr:last-child td { border-bottom: none; }
+      td.r, th.r { text-align: right; }
+      .tok { display: flex; align-items: flex-start; gap: 10px; }
+      .tok-badge {
+        width: 38px; height: 38px; border-radius: 9px; flex: none;
+        background: var(--brand-soft); color: var(--brand);
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--mono); font-weight: 600; font-size: 13px;
+      }
+      .tok-name { font-weight: 700; font-size: 16px; line-height: 1.2; }
+      .tok-full { font-size: 13px; color: var(--ink-2); }
+      .addr { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); word-break: break-all; }
+      .amt { font-family: var(--mono); font-weight: 600; font-size: 14.5px; white-space: nowrap; }
+      td .num { font-size: 15px; }
+      .price-main { font-family: var(--mono); font-weight: 600; white-space: nowrap; }
+      .price-sub { font-size: 12.5px; color: var(--ink-2); font-family: var(--mono); }
+      .pill { display: inline-block; font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+      .pill-hold { background: var(--warn-soft); color: var(--warn); }
+      .pill-new { background: var(--brand-soft); color: var(--brand); }
+      .pill-grad { background: var(--brand); color: #fff; }
+      @media (prefers-color-scheme: dark) { .pill-grad { color: #08130c; } }
+      .pill-sold { background: var(--surface-2); color: var(--ink-2); }
+      .pill-manual { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); }
+      .tpsl { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
+      .tpsl .tp { color: var(--gain); }
+      .tpsl .sl { color: var(--loss); }
+      .curve-info { display: block; font-family: var(--mono); font-size: 12px; color: var(--ink-2); margin-top: 3px; }
+
+      @media (max-width: 719px) {
+        table, thead, tbody, tr, td { display: block; }
+        thead { position: absolute; left: -9999px; }
+        tbody tr { padding: 12px 14px 6px; border-bottom: 1px solid var(--line); }
+        tbody tr:last-child { border-bottom: none; }
+        tbody td { border: none; padding: 4px 0; display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+        tbody td .price-sub, tbody td .tpsl { white-space: normal; }
+        tbody td::before { content: attr(data-label); font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); flex: none; padding-top: 2px; }
+        tbody td.cell-tok { display: block; padding-bottom: 8px; }
+        tbody td.cell-tok::before { content: none; }
+        td.r { text-align: right; }
+      }
+
+      /* ---------- Two-column panels ---------- */
+      .cols { display: grid; grid-template-columns: 1fr; gap: 14px; }
+      @media (min-width: 820px) { .cols { grid-template-columns: 1fr 1fr; } }
+      .cols-start { align-items: start; }
+      .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+      .panel h3 { margin: 0 0 10px; font-size: 16px; font-weight: 700; }
+      .rules { list-style: none; margin: 0; padding: 0; }
+      .rules li { display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 14.5px; }
+      .rules li:last-child { border-bottom: none; }
+      .rules .k { color: var(--ink-2); }
+      .rules .v { font-family: var(--mono); font-weight: 600; text-align: right; white-space: nowrap; }
+      .wallet-addr { font-family: var(--mono); font-size: 13.5px; word-break: break-all; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+      .copy-btn {
+        margin-top: 10px; font-family: var(--sans); font-size: 14px; font-weight: 600;
+        background: var(--brand); color: #fff; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; min-height: 38px;
+      }
+      @media (prefers-color-scheme: dark) { .copy-btn { color: #08130c; } }
+      .copy-btn:active { opacity: .85; }
+      .wallet-rows { margin-top: 12px; }
+
+      /* ---------- History ---------- */
+      .history { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+      .history li { display: flex; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--line); align-items: flex-start; }
+      .history li:last-child { border-bottom: none; }
+      .h-tag { flex: none; font-size: 12px; font-weight: 700; letter-spacing: .03em; border-radius: 6px; padding: 3px 8px; margin-top: 2px; min-width: 52px; text-align: center; }
+      .h-buy { background: var(--brand-soft); color: var(--brand); }
+      .h-sell { background: var(--loss-soft); color: var(--loss); }
+      .h-move { background: var(--surface-2); color: var(--ink-2); }
+      .h-body { flex: 1; min-width: 0; }
+      .h-title { font-weight: 600; font-size: 15px; }
+      .h-detail { font-size: 13.5px; color: var(--ink-2); }
+      .h-tx { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); word-break: break-all; }
+      .h-time { flex: none; font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); white-space: nowrap; padding-top: 3px; }
+
+      /* ---------- Skipped ---------- */
+      .skip-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
+      @media (min-width: 720px) { .skip-list { grid-template-columns: 1fr 1fr; } }
+      .skip { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; display: flex; gap: 12px; align-items: baseline; }
+      .skip .s-name { font-weight: 700; font-family: var(--mono); white-space: nowrap; }
+      .skip .s-why { font-size: 14px; color: var(--ink-2); }
+
+      /* ---------- Manual test panel ---------- */
+      .safe-note {
+        background: var(--warn-soft); border: 1px solid var(--line); border-radius: 10px;
+        padding: 12px 16px; font-size: 14px; margin-bottom: 14px;
+      }
+      .safe-note b { color: var(--warn); }
+      .fld { margin-bottom: 12px; }
+      .fld label { display: block; font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 5px; }
+      .fld select, .fld input {
+        width: 100%; font-family: var(--mono); font-size: 15px; color: var(--ink);
+        background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; min-height: 42px;
+      }
+      .fld .hint { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; font-family: var(--mono); }
+      .seg { display: flex; gap: 8px; margin-bottom: 12px; }
+      .seg button {
+        flex: 1; font-family: var(--sans); font-size: 14.5px; font-weight: 600; cursor: pointer;
+        background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line); border-radius: 8px; padding: 9px 0; min-height: 42px;
+      }
+      .seg button[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: #fff; }
+      @media (prefers-color-scheme: dark) { .seg button[aria-pressed="true"] { color: #08130c; } }
+      .btn {
+        font-family: var(--sans); font-size: 14.5px; font-weight: 600; cursor: pointer;
+        border-radius: 8px; padding: 9px 16px; min-height: 42px; border: 1px solid var(--line);
+        background: var(--surface-2); color: var(--ink);
+      }
+      .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+      @media (prefers-color-scheme: dark) { .btn-primary { color: #08130c; } }
+      .btn-block { width: 100%; }
+      .btn:disabled { opacity: .5; cursor: not-allowed; }
+      .btn:active:not(:disabled) { opacity: .85; }
+      .wallet-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+      .wallet-line .wstat { font-family: var(--mono); font-size: 13px; color: var(--ink-2); word-break: break-all; }
+      .quote-box {
+        display: none; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px;
+        padding: 11px 13px; font-size: 14px; margin-bottom: 12px;
+      }
+      .quote-box.show { display: block; }
+      .quote-box .q-main { font-family: var(--mono); font-weight: 600; font-size: 15.5px; }
+      .quote-box .q-sub { font-size: 13px; color: var(--ink-2); font-family: var(--mono); }
+      .confirm-box {
+        display: none; border: 1.5px solid var(--warn); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;
+        background: var(--surface);
+      }
+      .confirm-box.show { display: block; }
+      .confirm-box h4 { margin: 0 0 8px; font-size: 14.5px; }
+      .confirm-box ul { list-style: none; margin: 0 0 12px; padding: 0; font-size: 14px; }
+      .confirm-box li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+      .confirm-box li:last-child { border-bottom: none; }
+      .confirm-box .ck { color: var(--ink-2); flex: none; }
+      .confirm-box .cv { font-family: var(--mono); font-weight: 600; text-align: right; word-break: break-all; }
+      .confirm-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+      .txlog { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); margin-top: 10px; word-break: break-all; white-space: pre-wrap; }
+      .txlog .ok { color: var(--gain); font-weight: 600; }
+      .txlog .err { color: var(--loss); font-weight: 600; }
+      .net-note { font-size: 13.5px; color: var(--ink-2); margin: 0 0 12px; }
+
+      footer { margin-top: 36px; border-top: 1px solid var(--line); padding-top: 16px; color: var(--ink-2); font-size: 13.5px; }
+      footer p { margin: 0 0 6px; }
+
+      /* ---------- Floating nav ---------- */
+      section[id], header[id] { scroll-margin-top: 14px; }
+      .floating-nav {
+        position: fixed; left: 50%; transform: translateX(-50%);
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        z-index: 60; max-width: calc(100vw - 20px);
+        display: flex; align-items: center; gap: 2px;
+        background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+        padding: 5px; box-shadow: 0 10px 30px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.10);
+      }
+      .floating-nav a {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-height: 36px; padding: 7px 11px; border-radius: 999px;
+        font-size: 13.5px; font-weight: 600; line-height: 1; white-space: nowrap;
+        color: var(--ink-2); text-decoration: none; -webkit-tap-highlight-color: transparent;
+      }
+      .floating-nav a:hover { color: var(--ink); background: var(--surface-2); }
+      .floating-nav a:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; color: var(--ink); }
+      .floating-nav a.is-active { background: var(--brand-soft); color: var(--brand); }
+      .nav-live {
+        display: inline-flex; align-items: center; gap: 6px; flex: none;
+        padding: 7px 10px 7px 9px; margin-left: 2px; border-left: 1px solid var(--line);
+        font-family: var(--mono); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; color: var(--ink-2);
+      }
+      .nav-live .nl-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
+      .nav-live.is-live { color: var(--brand); }
+      .nav-live.is-live .nl-dot { background: var(--gain); animation: nl-pulse 2s ease-in-out infinite; }
+      .nav-live.is-fail .nl-dot { background: var(--loss); animation: none; }
+      @keyframes nl-pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+      @media (prefers-reduced-motion: reduce) { .nav-live.is-live .nl-dot { animation: none; } }
+      @media (max-width: 560px) {
+        .floating-nav { gap: 0; padding: 4px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+        .floating-nav a { padding: 7px 8px; font-size: 12.5px; min-height: 34px; }
+        .nav-live { padding: 7px 7px 7px 8px; font-size: 11px; }
+      }
+      @media (max-width: 380px) {
+        .floating-nav a { padding: 7px 6px; font-size: 12px; }
+      }
+
+      /* ---------- Gerbang connect wallet ---------- */
+      [hidden] { display: none !important; }
+      .gate { min-height: calc(100vh - 40px); display: flex; align-items: center; justify-content: center; padding: 28px 16px 110px; }
+      .gate-card {
+        width: 100%; max-width: 560px; background: var(--surface); border: 1px solid var(--line);
+        border-radius: 14px; padding: 30px 28px; box-shadow: 0 14px 40px rgba(0,0,0,.10);
+      }
+      .gate-net { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 12px; }
+      .gate-card h1 { font-size: 34px; margin: 0 0 10px; }
+      .gate-desc { color: var(--ink-2); font-size: 15.5px; margin: 0 0 20px; }
+      .gate-connect {
+        width: 100%; font-family: var(--sans); font-size: 17px; font-weight: 700; cursor: pointer;
+        background: var(--brand); border: 1px solid var(--brand); color: #fff; border-radius: 10px;
+        padding: 14px 18px; min-height: 54px;
+      }
+      @media (prefers-color-scheme: dark) { .gate-connect { color: #08130c; } }
+      .gate-connect:hover { opacity: .92; }
+      .gate-connect:active { opacity: .85; }
+      .gate-connect:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+      .gate-status { font-size: 13.5px; color: var(--ink-2); margin: 12px 0 0; min-height: 20px; }
+      .gate-status.err { color: var(--loss); }
+      .gate-safe { background: var(--warn-soft); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; margin-top: 16px; }
+      .gate-safe b { color: var(--warn); }
+      .gate-list { margin: 18px 0 0; padding: 0 0 0 18px; color: var(--ink-2); font-size: 14px; }
+      .gate-list li { margin-bottom: 5px; }
+      .gate-list li:last-child { margin-bottom: 0; }
+
+      /* ---------- Modal pilihan wallet ---------- */
+      .wc-overlay {
+        position: fixed; inset: 0; z-index: 100; background: rgba(10, 15, 11, .55);
+        display: flex; align-items: flex-end; justify-content: center; padding: 0;
+      }
+      @media (min-width: 640px) { .wc-overlay { align-items: center; padding: 20px; } }
+      .wc-modal {
+        background: var(--surface); color: var(--ink); width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto;
+        border: 1px solid var(--line); border-radius: 16px 16px 0 0; padding: 20px 20px 22px;
+        box-shadow: 0 24px 60px rgba(0,0,0,.30);
+      }
+      @media (min-width: 640px) { .wc-modal { border-radius: 16px; } }
+      .wc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .wc-head h2 { font-size: 20px; margin: 0; }
+      .wc-close {
+        flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line);
+        background: var(--surface-2); color: var(--ink); font-size: 15px; cursor: pointer; line-height: 1;
+      }
+      .wc-close:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+      .wc-sub { font-size: 13.5px; color: var(--ink-2); margin: 6px 0 14px; }
+      .wc-list { display: flex; flex-direction: column; gap: 8px; }
+      .wc-opt {
+        display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; cursor: pointer;
+        background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; min-height: 58px;
+        font-family: var(--sans); color: var(--ink);
+      }
+      .wc-opt:hover { border-color: var(--brand); background: var(--brand-soft); }
+      .wc-opt:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+      .wc-opt:disabled { opacity: .55; cursor: wait; }
+      .wc-opt img { width: 34px; height: 34px; border-radius: 8px; flex: none; }
+      .wc-ico {
+        width: 34px; height: 34px; border-radius: 8px; flex: none; display: flex; align-items: center; justify-content: center;
+        background: var(--brand-soft); color: var(--brand); font-family: var(--mono); font-weight: 700; font-size: 12px;
+      }
+      .wc-opt .wc-name { font-weight: 700; font-size: 15.5px; display: block; line-height: 1.25; }
+      .wc-opt .wc-desc { font-size: 12.5px; color: var(--ink-2); display: block; }
+      .wc-none { font-size: 14px; color: var(--ink-2); background: var(--surface-2); border: 1px dashed var(--line); border-radius: 10px; padding: 12px 14px; }
+      .wc-feedback { font-size: 13.5px; margin-top: 12px; min-height: 20px; color: var(--ink-2); white-space: pre-wrap; word-break: break-word; }
+      .wc-feedback.err { color: var(--loss); }
+      .wc-feedback.ok { color: var(--gain); }
+      .wc-fallback { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 14px; }
+      .wc-fb-title { font-weight: 700; font-size: 14.5px; margin: 0 0 8px; }
+      .wc-steps { margin: 0 0 14px; padding-left: 20px; font-size: 13.5px; color: var(--ink-2); }
+      .wc-steps li { margin-bottom: 5px; }
+
+      /* ---------- Wallet bar & disconnect ---------- */
+      .wallet-bar {
+        display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+        background: var(--brand-soft); border: 1px solid var(--brand); border-radius: 10px;
+        padding: 12px 16px; margin-bottom: 18px;
+      }
+      .wb-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .wb-label { font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+      .wb-addr { font-family: var(--mono); font-size: 14.5px; font-weight: 600; word-break: break-all; }
+      .wb-net { font-size: 12.5px; color: var(--ink-2); }
+      .disconnect-btn {
+        flex: none; font-family: var(--sans); font-size: 14.5px; font-weight: 700; cursor: pointer;
+        background: var(--surface); color: var(--loss); border: 1.5px solid var(--loss); border-radius: 8px;
+        padding: 9px 16px; min-height: 42px;
+      }
+      .disconnect-btn:hover { background: var(--loss-soft); }
+      .disconnect-btn:active { opacity: .85; }
+      .disconnect-btn:focus-visible { outline: 2px solid var(--loss); outline-offset: 2px; }
+      @media (max-width: 560px) { .disconnect-btn { width: 100%; } }
+
+      /* ---------- Panel aktifkan bot ---------- */
+      .bot-panel-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+      .bot-status-line { display: flex; align-items: center; gap: 9px; font-size: 18px; font-weight: 700; }
+      .bot-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--gain); flex: none; }
+      .bot-dot.off { background: var(--loss); }
+      .bot-desc { font-size: 14px; color: var(--ink-2); margin: 6px 0 0; max-width: 56ch; }
+      .switch {
+        flex: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer;
+        background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px 6px 6px; min-height: 46px;
+        font-family: var(--sans); font-size: 14px; font-weight: 700; color: var(--ink);
+      }
+      .switch .track { width: 46px; height: 26px; border-radius: 999px; background: var(--line); position: relative; flex: none; transition: background .15s ease; }
+      .switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,.25); transition: left .15s ease; }
+      .switch[aria-checked="true"] .track { background: var(--brand); }
+      .switch[aria-checked="true"] .knob { left: 23px; }
+      .switch:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+      @media (prefers-reduced-motion: reduce) { .switch .track, .switch .knob { transition: none; } }
+      .bot-note { font-size: 13px; color: var(--ink-2); margin: 12px 0 0; }
+
+      /* ---------- Widget ---------- */
+      .widget-view { display: none; }
+      html[data-hatch-view="widget"] .app-view { display: none; }
+      html[data-hatch-view="widget"] .widget-view { display: block; }
+      html[data-hatch-view="widget"] body { background: transparent; }
+      html[data-hatch-view="widget"] .wrap { padding: 10px; max-width: none; }
+      .w-card { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+      .w-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+      .w-balance { font-family: var(--mono); font-size: 30px; font-weight: 600; line-height: 1.15; }
+      .w-balance small { font-size: 15px; color: var(--ink-2); }
+      .w-row { font-size: 13px; color: var(--ink-2); }
+      .w-row b { color: var(--ink); font-family: var(--mono); font-weight: 600; }
+      html[data-hatch-size="small"] .w-balance { font-size: 21px; }
+      html[data-hatch-size="small"] .w-row.extra { display: none; }
+      html[data-hatch-size="small"] .w-reserve { display: none; }
+      html[data-hatch-size="small"] .w-row { font-size: 12px; line-height: 1.35; }
+      html[data-hatch-size="small"] .wrap { padding: 6px; }
+      html[data-hatch-size="small"] .w-card { gap: 0; }
+      html[data-hatch-target="tv"] h1 { font-size: 44px; }
+      html[data-hatch-target="tv"] body { font-size: 19px; }
+    </style>
+  </head>
+  <body>
+    <!-- ================= WIDGET ================= -->
+    <section class="widget-view" aria-label="Ringkasan Bot GAMA">
+      <div class="wrap">
+        <div class="w-card">
+          <div class="w-label"><span class="dot"></span> Bot GAMA · GIWA Sepolia</div>
+          <div class="w-balance"><span id="wBalance">0,13745744</span> <small>ETH</small></div>
+          <div class="w-row"><b>8</b> posisi terbuka<span class="w-reserve"> · cadangan <b>0,01 ETH</b></span></div>
+          <div class="w-row extra">Modal per beli <b>0,002 ETH</b> · TP +10% / SL −10%</div>
+          <div class="w-row extra" id="wTime">Per 26 Nov 2026, 09:13 WIB</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= APP ================= -->
+    <div class="app-view">
+
+      <!-- ===== Gerbang: tampil sebelum wallet terhubung ===== -->
+      <section class="gate" id="gateView" aria-labelledby="gate-title">
+        <div class="gate-card">
+          <div class="gate-net"><span class="dot" aria-hidden="true"></span> GIWA Sepolia Testnet · Launchpad Gamatiles</div>
+          <h1 id="gate-title">Dashboard BOT</h1>
+          <p class="gate-desc">Dashboard ini terkunci. Hubungkan wallet kamu dulu — setelah terhubung, kamu bisa melihat posisi trading yang dipegang, grafik, panel aktifkan bot, untung/rugi jual, riwayat transaksi, dan aturan bot.</p>
+          <button class="gate-connect" id="gateConnectBtn" type="button">Connect Wallet</button>
+          <p class="gate-status" id="gateStatus" role="status">Belum ada wallet yang terhubung.</p>
+          <div class="gate-safe"><b>Keamanan:</b> dashboard ini <b>tidak pernah</b> meminta, menanam, atau menampilkan seed phrase / private key. Menghubungkan wallet hanya membagikan alamat publikmu — setiap transaksi tetap harus kamu setujui dan tanda tangani sendiri di aplikasi wallet-mu.</div>
+          <ul class="gate-list">
+            <li>8 posisi trading — 7 posisi bot + AF manual, lengkap dengan modal, nilai jual live, dan TP/SL</li>
+            <li>Grafik nilai posisi &amp; progres graduasi, data live diperbarui tiap 60 detik</li>
+            <li>Panel aktifkan bot, P/L terealisasi &amp; belum terealisasi, riwayat transaksi, dan aturan bot</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ===== Isi dashboard: tersembunyi sampai wallet terhubung ===== -->
+      <div id="dashboardView" hidden>
+      <div class="wrap">
+        <div class="wallet-bar" id="walletBar">
+          <div class="wb-info">
+            <span class="dot" aria-hidden="true"></span>
+            <div>
+              <div class="wb-label">Wallet Terhubung</div>
+              <div class="wb-addr" id="connectedAddr">—</div>
+              <div class="wb-net" id="connectedNet">—</div>
+            </div>
+          </div>
+          <button class="disconnect-btn" id="disconnectBtn" type="button">Disconnect Wallet</button>
+        </div>
+        <header class="top" id="ringkasan">
+          <div class="status-line">
+            <span class="dot" aria-hidden="true"></span>
+            <span class="net">Bot aktif · cek tiap 15 menit · GIWA Sepolia Testnet · Launchpad Gamatiles</span>
+          </div>
+          <h1>Dashboard BOT</h1>
+          <p class="sub">Posisi trading Bot GAMA di GIWA Sepolia — semua koin yang sedang dipegang, lengkap dengan detail pembelian dan harga tokennya.</p>
+          <div class="status-row">
+            <span class="snapshot" id="dataStatus"><span class="sdot" aria-hidden="true"></span><span id="dataStatusText">Menghubungi RPC GIWA Sepolia… kalau gagal, yang tampil adalah data snapshot per <b>Kamis, 26 November 2026 · 09:13 WIB</b>.</span></span>
+            <button class="refresh-btn" id="refreshBtn" type="button" aria-label="Perbarui data live sekarang"><span class="rf-icon" aria-hidden="true">↻</span><span class="rf-label">Refresh</span></button>
+          </div>
+        </header>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Saldo Wallet (GIWA)</div>
+            <div class="value"><span id="statBalance">0,13745744</span> <small>ETH</small></div>
+            <div class="note" id="statBalanceNote">Setelah bridge +0,10 ETH dari Ethereum Sepolia</div>
+          </div>
+          <div class="stat">
+            <div class="label">Posisi Terbuka</div>
+            <div class="value"><span id="statPosCount">8</span> <small>token</small></div>
+            <div class="note" id="statPosNote">Total modal masuk: 0,124 ETH</div>
+          </div>
+          <div class="stat">
+            <div class="label">Cadangan Minimum</div>
+            <div class="value">0,01 <small>ETH</small></div>
+            <div class="note">Tidak pernah disentuh — buat gas &amp; darurat</div>
+          </div>
+          <div class="stat">
+            <div class="label">Sisa Kemampuan Beli</div>
+            <div class="value"><span id="statBuys">±63</span> <small>kali beli</small></div>
+            <div class="note">0,002 ETH per beli, tanpa batas harian</div>
+          </div>
+        </div>
+
+        <section id="bot" aria-labelledby="bot-title">
+          <h2 id="bot-title">Aktifkan Bot</h2>
+          <p class="sec-sub">Status bot trading dan pemantauan live dashboard ini.</p>
+          <div class="panel">
+            <div class="bot-panel-top">
+              <div>
+                <div class="bot-status-line"><span class="bot-dot" id="botDot" aria-hidden="true"></span><span id="botStatusText">Pemantauan Live Aktif</span></div>
+                <p class="bot-desc" id="botStatusDesc">Bot memantau 8 posisi dan mengecek TP/SL tiap 15 menit. Pemantauan live dashboard berjalan — data diperbarui otomatis tiap 60 detik.</p>
+              </div>
+              <button class="switch" id="botToggle" type="button" role="switch" aria-checked="true" aria-label="Aktifkan atau nonaktifkan pemantauan live bot di dashboard ini">
+                <span class="track" aria-hidden="true"><span class="knob"></span></span><span id="botToggleLabel">Live Aktif</span>
+              </button>
+            </div>
+            <ul class="rules" style="margin-top:12px;">
+              <li><span class="k">Status bot</span><span class="v" id="botRowStatus">AKTIF</span></li>
+              <li><span class="k">Pemantauan live dashboard</span><span class="v" id="botRowLive">Jalan · refresh 60 detik</span></li>
+              <li><span class="k">Posisi dipantau</span><span class="v">8 token</span></li>
+              <li><span class="k">Jeda pengecekan bot</span><span class="v">tiap 15 menit</span></li>
+            </ul>
+            <p class="bot-note">Tombol di atas menjalankan / menghentikan pemantauan live dan auto-refresh di dashboard ini. Bot trading yang berjalan di latar tetap mengikuti aturan di bagian Aturan Bot — untuk menghentikannya sepenuhnya, hentikan proses bot-nya.</p>
+          </div>
+        </section>
+
+        <section id="grafik" aria-labelledby="chart-title">
+          <h2 id="chart-title">Grafik</h2>
+          <p class="sec-sub">Dua grafik ini digambar dari angka yang sama dengan tabel posisi di bawah — dan ikut diperbarui tiap kali data live masuk.</p>
+          <div class="cols cols-start">
+            <div class="chart-card">
+              <h3>Nilai Posisi vs Modal</h3>
+              <p class="c-sub">Nilai jual sekarang (quoteSell) dibanding modal tiap posisi, dalam ETH. Garis putus-putus di tiap batang adalah modal posisi itu (0,002 ETH untuk posisi bot, 0,012 ETH untuk SOLANA, 0,1 ETH untuk AF).</p>
+              <div id="chartValue" role="img" aria-label="Grafik batang nilai posisi delapan token dibanding modal masing-masing"></div>
+              <div class="chart-legend">
+                <span><span class="sw" style="background:var(--gain)"></span>Di atas / pas modal</span>
+                <span><span class="sw" style="background:var(--loss)"></span>Di bawah modal</span>
+                <span>- - Garis modal tiap token</span>
+              </div>
+            </div>
+            <div class="chart-card">
+              <h3>Progres ke Graduasi</h3>
+              <p class="c-sub">ETH asli yang sudah terkumpul di kurva bonding (realEth) tiap token, plus persen ke graduasinya.</p>
+              <div id="chartGrad" role="img" aria-label="Grafik batang ETH terkumpul di kurva tiap token dan persen menuju graduasi"></div>
+              <div class="chart-legend">
+                <span><span class="sw" style="background:var(--brand)"></span>realEth terkumpul</span>
+                <span>Persen = realEth ÷ total ETH yang dibutuhkan untuk graduasi</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="posisi" aria-labelledby="pos-title">
+          <h2 id="pos-title">Posisi yang Dipegang</h2>
+          <p class="sec-sub">Harga beli dihitung dari transaksi pembelian masing-masing token. Target jual (TP) +10% dan batas rugi (SL) −10% dihitung dari modal tiap posisi. AF adalah holding manual yang sudah graduasi — tidak di-TP/SL bot.</p>
+          <div class="table-card">
+            <table>
+              <colgroup>
+                <col class="c-tok" /><col class="c-amt" /><col class="c-price" /><col class="c-cap" /><col class="c-val" /><col class="c-stat" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Token</th>
+                  <th class="r">Jumlah Dipegang</th>
+                  <th class="r">Harga Beli</th>
+                  <th class="r">Modal</th>
+                  <th class="r">Nilai Terakhir</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="posBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="pl" aria-labelledby="pl-title">
+          <h2 id="pl-title">Untung / Rugi Sejauh Ini</h2>
+          <p class="sec-sub">Angka snapshot berdasarkan pengecekan on-chain 26 Nov, 08:32 WIB; baris berlabel “live” mengikuti data RPC terbaru.</p>
+          <div class="cols cols-start">
+            <div class="panel">
+              <h3>Ringkasan P/L</h3>
+              <ul class="rules">
+                <li><span class="k">Total nilai wallet (snapshot 08:32)</span><span class="v">0,05136 ETH</span></li>
+                <li><span class="k">Modal yang masuk saat itu</span><span class="v">0,052 ETH</span></li>
+                <li><span class="k">Selisih (snapshot)</span><span class="v loss">−0,00064 ETH (−1,2%)</span></li>
+                <li><span class="k">Rugi terealisasi (sudah terjual)</span><span class="v loss">−0,00674 ETH</span></li>
+                <li><span class="k">Nilai posisi terbuka (live)</span><span class="v" id="plPosVal">—</span></li>
+                <li><span class="k">P/L posisi terbuka (live)</span><span class="v" id="plUnreal">—</span></li>
+                <li><span class="k">Total nilai wallet GIWA (live)</span><span class="v" id="plTotal">—</span></li>
+              </ul>
+            </div>
+            <div class="panel">
+              <h3>Catatan P/L</h3>
+              <p style="margin:0; font-size:14.5px;">Kerugian terbesar datang dari SOLANA. Ronde 1 kena stop-loss dengan realisasi −27% (−0,00054 ETH). Ronde 2 — gabungan bot + beli manual, modal 0,012 ETH — kena stop-loss lagi pada 26 Nov pukul 11:13 WIB: seluruh 2.580.059,34 SOLANA terjual senilai ±0,005805 ETH, realisasi sekitar −52% (−0,00620 ETH). SL adalah pemicu yang dicek tiap 15 menit, bukan jaminan harga jual. Posisi lain masih terbuka, jadi angka akhirnya belum final.</p>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="hist-title">
+          <h2 id="hist-title">Riwayat Transaksi</h2>
+          <p class="sec-sub">Semua transaksi yang sudah terverifikasi on-chain, dari yang paling awal — termasuk beli/jual manual yang melibatkan wallet bot.</p>
+          <p class="sec-sub" id="histNote" style="margin-top:-8px; font-size:13px;">Riwayat terverifikasi di bawah ini sampai 26 Nov · 11:13 WIB. Transaksi yang lebih baru ditambahkan otomatis dari data on-chain (event Transfer token di wallet bot) setiap refresh live berhasil.</p>
+          <ul class="history" id="histList">
+            <li>
+              <span class="h-tag h-buy">BELI</span>
+              <div class="h-body">
+                <div class="h-title">PMSMS (Permink) — 0,002 ETH → 1.169.780,92 PMSMS</div>
+                <div class="h-detail">Posisi pertama bot · blok 42285358</div>
+                <div class="h-tx">tx 0x681e545083c63a5efe1e08cb3a336b31481d1b949d20c16fc853e4117e7d3d26</div>
+              </div>
+              <span class="h-time">25 Nov</span>
+            </li>
+            <li>
+              <span class="h-tag h-buy">BELI</span>
+              <div class="h-body">
+                <div class="h-title">SOLANA ronde 1 — 0,002 ETH → 303.898,41 SOLANA</div>
+                <div class="h-detail">Lolos verifikasi ulang: realEth 1,7714 (42,2% ke graduasi), 11 holder, fee 0% · blok 42286436</div>
+                <div class="h-tx">tx 0xff63552b9437d007b2dece3faff9eed87010ef7ca6e79bde1fcfcefa2a198e67</div>
+              </div>
+              <span class="h-time">26 Nov · 01:33</span>
+            </li>
+            <li>
+              <span class="h-tag h-sell">JUAL</span>
+              <div class="h-body">
+                <div class="h-title">SOLANA ronde 1 — kena Stop-Loss → 0,00145866 ETH</div>
+                <div class="h-detail">Jual 303.898,41 SOLANA · rugi −0,00054 ETH (−27%) · blok 42292526</div>
+                <div class="h-tx">tx 0x4da927f4107f021202b92c905950066cbf1a03cead4d50de1cf6121009659d2e</div>
+              </div>
+              <span class="h-time">26 Nov · 03:14</span>
+            </li>
+            <li>
+              <span class="h-tag h-buy">BELI</span>
+              <div class="h-body">
+                <div class="h-title">SOLANA ronde 2 — 0,002 ETH → 431.478,70 SOLANA</div>
+                <div class="h-detail">Beli lagi karena harga turun ≥5% dari harga jual terakhir · blok 42297035</div>
+                <div class="h-tx">tx 0x3f01313db3ddef84450654bf09f7fc1d04de99c9088a4bfee158fbd3bec15c76</div>
+              </div>
+              <span class="h-time">26 Nov · 04:28</span>
+            </li>
+            <li>
+              <span class="h-tag h-buy">BELI</span>
+              <div class="h-body">
+                <div class="h-title">FLPY (FLIQPY) — 0,002 ETH → 1.057.565,38 FLPY</div>
+                <div class="h-detail">Pilihan terkuat dari scan 40 launch terbaru · blok 42313290</div>
+                <div class="h-tx">tx 0x2d72a9d126564a44ef7ac4d40d1eab44147795aebf3c639436057e680ebe5b09</div>
+              </div>
+              <span class="h-time">26 Nov · ±09:00</span>
+            </li>
+            <li>
+              <span class="h-tag h-buy">BELI</span>
+              <div class="h-body">
+                <div class="h-title">RKCAT (ROCKCAT) — 0,002 ETH → 1.120.560,19 RKCAT</div>
+                <div class="h-detail">RealEth tertinggi kedua di shortlist, tekanan jual nyaris nol · blok 42313298</div>
+                <div class="h-tx">tx 0xa85feaf4562622fab75634e3d6fef8c3e633e51c5d6d062cdb3491182804f820</div>
+              </div>
+              <span class="h-time">26 Nov · ±09:00</span>
+            </li>
+            <li>
+              <span class="h-tag h-buy">BELI</span>
+              <div class="h-body">
+                <div class="h-title">JAS (Jasmine) — 0,002 ETH → 1.125.724,93 JAS</div>
+                <div class="h-detail">Kebeli otomatis begitu aturan cadangan 0,01 ETH aktif</div>
+                <div class="h-tx">tx 0x29fcd6eb428274a65ef2f24678cda95b400c3818c13bb1a35780e751e66019ed</div>
+              </div>
+              <span class="h-time">26 Nov · ±09:06</span>
+            </li>
+            <li>
+              <span class="h-tag h-buy">BELI</span>
+              <div class="h-body">
+                <div class="h-title">CIP (Cipher) — 0,002 ETH → 1.195.817,82 CIP</div>
+                <div class="h-detail">Kebeli otomatis begitu aturan cadangan 0,01 ETH aktif</div>
+                <div class="h-tx">tx 0x375eff616aef5c47143565e18cfedc769a8272443746c6b0c575a7b17852c0fa</div>
+              </div>
+              <span class="h-time">26 Nov · ±09:06</span>
+            </li>
+            <li>
+              <span class="h-tag h-buy">BELI</span>
+              <div class="h-body">
+                <div class="h-title">PAIJO — 0,002 ETH → 1.259.497,75 PAIJO</div>
+                <div class="h-detail">Kebeli otomatis begitu aturan cadangan 0,01 ETH aktif</div>
+                <div class="h-tx">tx 0x81924d468a8e1f4b0f99a1374d9478f90c58ff0e638357cd45239bc6b26e4e71</div>
+              </div>
+              <span class="h-time">26 Nov · ±09:06</span>
+            </li>
+            <li>
+              <span class="h-tag h-move">BRIDGE</span>
+              <div class="h-body">
+                <div class="h-title">Bridge 0,10 ETH — Ethereum Sepolia → GIWA Sepolia</div>
+                <div class="h-detail">Lewat bridge resmi GIWA (L1StandardBridge) · blok 12213512 · saldo GIWA naik 0,03745744 → 0,13745744 ETH</div>
+                <div class="h-tx">tx 0xa44c5dcfed43bce661ebd57faefc2f60727cedcdf9c8b7ff8baf3553ff1f82f7</div>
+              </div>
+              <span class="h-time">26 Nov · 09:13</span>
+            </li>
+            <li>
+              <span class="h-tag h-buy">BELI</span>
+              <div class="h-body">
+                <div class="h-title">SOLANA manual — 0,01 ETH → 2.148.580 SOLANA</div>
+                <div class="h-detail">Beli manual lewat dashboard · digabung ke posisi SOLANA bot — modal gabungan jadi 0,012 ETH, saldo 2.580.059,34 SOLANA</div>
+                <div class="h-tx">tx 0x24716092bd15c3abe8d2f4037013f355ceb78742ae20ea2f3ef7b7141651bda1</div>
+              </div>
+              <span class="h-time">26 Nov · 10:45</span>
+            </li>
+            <li>
+              <span class="h-tag h-buy">BELI</span>
+              <div class="h-body">
+                <div class="h-title">AF (Airdrop Finder) manual — 0,1 ETH → 8.103,50 AF</div>
+                <div class="h-detail">Beli manual lewat dashboard · AF sudah graduasi, tercatat sebagai holding manual (tidak di-TP/SL bot)</div>
+                <div class="h-tx">tx 0x3c3d65a11623f0db3b13d6383b88c7e3d63eeec62ea2da4becf7d02e9de04ce4</div>
+              </div>
+              <span class="h-time">26 Nov · 10:46</span>
+            </li>
+            <li>
+              <span class="h-tag h-sell">JUAL</span>
+              <div class="h-body">
+                <div class="h-title">SOLANA ronde 2 — kena Stop-Loss → ±0,005805 ETH</div>
+                <div class="h-detail">Jual semua 2.580.059,34 SOLANA (bot + manual) · rugi ±−0,00620 ETH (−52%) dari modal gabungan 0,012 ETH · blok 42321327</div>
+                <div class="h-tx">tx 0xec617210e29cc6c5235ea569ab243c05202ed3957cbd8967fd535ee25aa04df9</div>
+              </div>
+              <span class="h-time">26 Nov · 11:13</span>
+            </li>
+          </ul>
+        </section>
+
+        <section id="aturan" aria-labelledby="rules-title">
+          <h2 id="rules-title">Aturan Bot &amp; Wallet</h2>
+          <p class="sec-sub">Aturan yang sedang aktif dan berlaku terus, tanpa batas harian.</p>
+          <div class="cols cols-start">
+            <div class="panel">
+              <h3>Aturan Trading</h3>
+              <ul class="rules">
+                <li><span class="k">Modal per beli</span><span class="v">0,002 ETH</span></li>
+                <li><span class="k">Take Profit</span><span class="v gain">+10% · 0,0022 ETH</span></li>
+                <li><span class="k">Stop Loss</span><span class="v loss">−10% · 0,0018 ETH</span></li>
+                <li><span class="k">Beli lagi setelah jual</span><span class="v">harga turun ≥5%</span></li>
+                <li><span class="k">Batas harian</span><span class="v">tidak ada</span></li>
+                <li><span class="k">Berhenti beli</span><span class="v">saldo ≤ 0,01 ETH</span></li>
+                <li><span class="k">Jeda pengecekan</span><span class="v">tiap 15 menit</span></li>
+                <li><span class="k">Pengaman</span><span class="v">anti-graduasi · fee ≤2%</span></li>
+              </ul>
+            </div>
+            <div class="panel">
+              <h3>Wallet Bot</h3>
+              <div class="wallet-addr" id="walletAddr">0x10bE9123D792c3bbFAde1B02928763Cb121952bf</div>
+              <button class="copy-btn" id="copyBtn" type="button">Salin Alamat</button>
+              <ul class="rules wallet-rows">
+                <li><span class="k">Saldo GIWA Sepolia</span><span class="v" id="walletBalRow">0,13745744 ETH</span></li>
+                <li><span class="k">Sisa di Ethereum Sepolia</span><span class="v">0,00243629 ETH</span></li>
+                <li><span class="k">Jenis wallet</span><span class="v">khusus testnet bot</span></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="manual" aria-labelledby="manual-title">
+          <h2 id="manual-title">Test Manual</h2>
+          <p class="sec-sub">Coba sendiri beli/jual token atau bridge ETH — dari wallet kamu sendiri, bukan wallet bot.</p>
+          <div class="safe-note"><b>Keamanan:</b> halaman ini <b>TIDAK PERNAH</b> meminta, menanam, atau menampilkan private key / seed phrase. Semua transaksi ditandatangani oleh wallet yang kamu hubungkan sendiri di browser (MetaMask) — halaman ini hanya menyiapkan datanya. Ini transaksi testnet nyata di jaringan GIWA Sepolia / Ethereum Sepolia; ETH-nya ETH testnet, bukan uang asli.</div>
+          <div class="cols cols-start">
+            <div class="panel">
+              <h3>Swap Manual — Launchpad Gamatiles</h3>
+              <div class="wallet-line">
+                <button class="btn btn-primary" id="connectBtn" type="button">Connect Wallet</button>
+                <button class="btn" id="disconnectBtn2" type="button" style="color:var(--loss); border-color:var(--loss); font-weight:700;">Disconnect Wallet</button>
+                <span class="wstat" id="walletInfo">Belum terhubung.</span>
+              </div>
+              <div class="wallet-line">
+                <button class="btn" id="switchGiwaBtn" type="button">Pindah ke GIWA Sepolia</button>
+                <button class="btn" id="switchSepoliaBtn" type="button">Pindah ke Ethereum Sepolia</button>
+              </div>
+              <div class="fld">
+                <label for="swapToken">Token</label>
+                <select id="swapToken"></select>
+                <div class="hint" id="swapBalHint"></div>
+              </div>
+              <div class="seg" role="group" aria-label="Arah swap">
+                <button type="button" id="sideBuy" aria-pressed="true">Beli</button>
+                <button type="button" id="sideSell" aria-pressed="false">Jual</button>
+              </div>
+              <div class="fld">
+                <label for="swapAmount" id="swapAmountLabel">Jumlah ETH yang dibelanjakan</label>
+                <input id="swapAmount" type="text" inputmode="decimal" placeholder="0,002" autocomplete="off" />
+                <button class="btn" id="sellAllBtn" type="button" style="display:none; margin-top:8px;">Jual Semua</button>
+                <div class="hint" id="sellAllHint" style="display:none;">Mengisi jumlah jual dengan seluruh saldo token ini di wallet yang terhubung.</div>
+              </div>
+              <button class="btn btn-block" id="quoteBtn" type="button">Lihat Quote</button>
+              <div class="quote-box" id="quoteBox" style="margin-top:12px;"></div>
+              <div class="confirm-box" id="swapConfirm">
+                <h4>Konfirmasi Transaksi — cek dulu sebelum kirim</h4>
+                <ul id="swapConfirmList"></ul>
+                <div class="confirm-btns">
+                  <button class="btn btn-primary" id="swapSendBtn" type="button">Ya, Kirim Transaksi</button>
+                  <button class="btn" id="swapCancelBtn" type="button">Batal</button>
+                </div>
+              </div>
+              <div class="txlog" id="swapLog" aria-live="polite"></div>
+            </div>
+            <div class="panel">
+              <h3>Bridge Manual — Sepolia → GIWA</h3>
+              <p class="net-note">Kirim ETH dari <b>Ethereum Sepolia</b> ke alamat yang sama di <b>GIWA Sepolia</b>, lewat bridge resmi L1StandardBridge <span class="mono">0x77b2ffc0…A7E7</span>. Wallet harus sedang berada di jaringan Ethereum Sepolia. Dana biasanya tiba di GIWA dalam beberapa menit.</p>
+              <div class="fld">
+                <label for="bridgeAmount">Jumlah ETH yang di-bridge</label>
+                <input id="bridgeAmount" type="text" inputmode="decimal" placeholder="0,01" autocomplete="off" />
+                <div class="hint">Penerima di GIWA = alamat wallet kamu yang terhubung (alamat yang sama).</div>
+              </div>
+              <button class="btn btn-block" id="bridgePrepBtn" type="button">Siapkan Bridge</button>
+              <div class="confirm-box" id="bridgeConfirm" style="margin-top:12px;">
+                <h4>Konfirmasi Bridge — cek dulu sebelum kirim</h4>
+                <ul id="bridgeConfirmList"></ul>
+                <div class="confirm-btns">
+                  <button class="btn btn-primary" id="bridgeSendBtn" type="button">Ya, Kirim Bridge</button>
+                  <button class="btn" id="bridgeCancelBtn" type="button">Batal</button>
+                </div>
+              </div>
+              <div class="txlog" id="bridgeLog" aria-live="polite"></div>
+              <p class="net-note" style="margin-top:12px;"><b>Catatan arah sebaliknya:</b> menarik ETH dari GIWA Sepolia kembali ke Ethereum Sepolia <b>tidak instan</b> — penarikan OP Stack harus melewati masa tunggu finalisasi / challenge period (bisa berhari-hari) sebelum bisa diklaim di L1. Karena itu panel ini hanya menyediakan arah Sepolia → GIWA.</p>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="skip-title">
+          <h2 id="skip-title">Token yang Dilewati</h2>
+          <p class="sec-sub">Kandidat yang sempat dicek tapi dicoret bot — biar jelas kenapa tidak semua koin masuk.</p>
+          <div class="skip-list">
+            <div class="skip"><span class="s-name">CHLOE</span><span class="s-why">RealEth anjlok 1,20 → 0,36, harga jatuh ±50% saat dicek ulang.</span></div>
+            <div class="skip"><span class="s-name">VI</span><span class="s-why">RealEth turun 0,589 → 0,12, harga jatuh ±37%.</span></div>
+            <div class="skip"><span class="s-name">MAGIC</span><span class="s-why">Graduasi 2 menit setelah lolos cek — pembelian digagalkan guard bot, tidak ada ETH keluar.</span></div>
+            <div class="skip"><span class="s-name">MUSE</span><span class="s-why">Holder tetap 2, tidak tumbuh.</span></div>
+            <div class="skip"><span class="s-name">ARCK</span><span class="s-why">Paling ramai (volume ±1,99 ETH) tapi fee kreator 5% — di atas batas 2%.</span></div>
+            <div class="skip"><span class="s-name">TNOV · CLANK</span><span class="s-why">Fee kreator 10%.</span></div>
+          </div>
+        </section>
+
+        <footer>
+          <p><b>Catatan:</b> semua ETH dan token di halaman ini berjalan di testnet GIWA Sepolia — tidak bernilai uang asli. Stop-loss adalah pemicu yang dicek tiap 15 menit, bukan jaminan harga jual; saat harga jatuh cepat, realisasi jual bisa lebih buruk dari −10% (pernah terjadi −27% pada SOLANA ronde 1).</p>
+          <p>Dashboard ini mengambil data langsung dari RPC GIWA Sepolia saat dibuka dan memperbaruinya tiap 60 detik (badge LIVE + jam update ada di bagian atas). Kalau koneksi ke RPC gagal, yang tampil adalah data snapshot terakhir yang terverifikasi on-chain pada 26 November 2026 pukul 09:13 WIB, dengan label snapshot yang jelas.</p>
+        </footer>
+      </div>
+
+      <nav class="floating-nav" aria-label="Navigasi cepat dashboard">
+        <a href="#ringkasan" data-nav="ringkasan" aria-label="Ringkasan / Saldo">Saldo</a>
+        <a href="#bot" data-nav="bot">Bot</a>
+        <a href="#posisi" data-nav="posisi">Posisi</a>
+        <a href="#grafik" data-nav="grafik">Grafik</a>
+        <a href="#manual" data-nav="manual" aria-label="Test Manual (Swap / Bridge)">Manual</a>
+        <a href="#aturan" data-nav="aturan">Aturan</a>
+        <span class="nav-live" id="navLive" role="status" aria-label="Status data live"><span class="nl-dot" aria-hidden="true"></span>LIVE</span>
+      </nav>
+      </div><!-- /dashboardView -->
+    </div>
+
+    <!-- ===== Modal pilihan wallet (injected + WalletConnect) ===== -->
+    <div class="wc-overlay" id="walletModal" hidden role="dialog" aria-modal="true" aria-labelledby="walletModalTitle">
+      <div class="wc-modal">
+        <div class="wc-head">
+          <h2 id="walletModalTitle">Hubungkan Wallet</h2>
+          <button class="wc-close" id="walletModalClose" type="button" aria-label="Tutup pilihan wallet">✕</button>
+        </div>
+        <p class="wc-sub">Pilih cara menghubungkan wallet. Dashboard hanya menerima alamat publikmu — seed phrase / private key tidak pernah diminta, dan setiap transaksi tetap kamu tanda tangani sendiri di wallet-mu.</p>
+        <div class="wc-list" id="walletOptionList"></div>
+        <div class="wc-feedback" id="walletModalFeedback" role="status"></div>
+        <div class="wc-fallback" id="walletFallback" hidden>
+          <p class="wc-fb-title">Tidak ada wallet terdeteksi di browser ini?</p>
+          <ol class="wc-steps">
+            <li>Pakai pilihan <b>WalletConnect</b> di atas — pindai QR-nya dari aplikasi wallet di HP, atau buka deep-link-nya di HP yang sama.</li>
+            <li>Di HP tanpa WalletConnect: buka dashboard ini dari browser bawaan aplikasi wallet (mis. MetaMask → menu Browser, lalu masukkan alamat dashboard dari aplikasi Muse).</li>
+            <li>Di komputer: pasang ekstensi wallet seperti MetaMask, lalu muat ulang halaman ini dan connect lagi.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        /* ================= Konstanta & data snapshot ================= */
+        var RPC = "https://giwa-sepolia-testnet.api.pocket.network";
+        var L1_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
+        var WALLET = "0x10bE9123D792c3bbFAde1B02928763Cb121952bf";
+        var LP = "0x7abbC4bB4Fb7aa2cEA082697E87B828A691141CB";
+        var BRIDGE = "0x77b2ffc0F57598cAe1DB76cb398059cF5d10A7E7";
+        var GIWA_CHAIN = 91342, GIWA_HEX = "0x164CE";
+        var SEPOLIA_CHAIN = 11155111, SEPOLIA_HEX = "0xAA36A7";
+        var COST = 0.002, TP = 0.0022, SL = 0.0018, RESERVE = 0.01;
+
+        var TOKENS = [
+          { sym: "PMSMS", name: "Permink", note: "", addr: "0x058169caeb6fafb931b22b960edce39bc34d4425",
+            priceMain: "0,001710 ETH", priceSub: "per 1 jt token · 1,71×10⁻⁹ /token",
+            amt: 1169780.92, val: 0.001942, pnlPct: -2.9, valNote: "−2,9% · 08:32 WIB", isNew: false, realEth: null, prog: null, graduated: false },
+          { sym: "SOLANA", name: "SOLANA", note: "Ronde 2 bot + beli manual 0,01 ETH", addr: "0x820b4aAacd2ACc2A77FA34a49f4dc83A094Ed17d",
+            priceMain: "0,004651 ETH", priceSub: "per 1 jt token · 4,65×10⁻⁹ /token",
+            amt: 2580059.34, cost: 0.012, val: 0.01176, pnlPct: -2.0, valNote: "−2,0% · snapshot gabungan", isNew: false, realEth: 1.2183, prog: null, graduated: false },
+          { sym: "FLPY", name: "FLIQPY", note: "", addr: "0x063c8830f68d397f5383f180c85636457273d699",
+            priceMain: "0,001891 ETH", priceSub: "per 1 jt token · 1,89×10⁻⁹ /token",
+            amt: 1057565.38, val: 0.002, pnlPct: null, valNote: "baru masuk ±09:00 WIB", isNew: true, realEth: 0.1703, prog: null, graduated: false },
+          { sym: "RKCAT", name: "ROCKCAT", note: "", addr: "0xef246575becf7ccd9253e253df873c10c1193a34",
+            priceMain: "0,001785 ETH", priceSub: "per 1 jt token · 1,78×10⁻⁹ /token",
+            amt: 1120560.19, val: 0.002, pnlPct: null, valNote: "baru masuk ±09:00 WIB", isNew: true, realEth: 0.1078, prog: null, graduated: false },
+          { sym: "JAS", name: "Jasmine", note: "", addr: "0x4931f69089ebca16d8bdc9ce788c6eb68af75ac4",
+            priceMain: "0,001777 ETH", priceSub: "per 1 jt token · 1,78×10⁻⁹ /token",
+            amt: 1125724.93, val: 0.002, pnlPct: null, valNote: "baru masuk ±09:06 WIB", isNew: true, realEth: 0.0930, prog: null, graduated: false },
+          { sym: "CIP", name: "Cipher", note: "", addr: "0x5df797bcb247cd75f9e8ac4e30a69b032e9c04a9",
+            priceMain: "0,001673 ETH", priceSub: "per 1 jt token · 1,67×10⁻⁹ /token",
+            amt: 1195817.82, val: 0.002, pnlPct: null, valNote: "baru masuk ±09:06 WIB", isNew: true, realEth: 0.0594, prog: null, graduated: false },
+          { sym: "PAIJO", name: "Paijo", note: "", addr: "0x74987adb058408319854588db6c781e3f3a68f05",
+            priceMain: "0,001588 ETH", priceSub: "per 1 jt token · 1,59×10⁻⁹ /token",
+            amt: 1259497.75, val: 0.002, pnlPct: null, valNote: "baru masuk ±09:06 WIB", isNew: true, realEth: 0.0158, prog: null, graduated: false },
+          { sym: "AF", name: "Airdrop Finder", note: "Holding manual — di luar 7 token bot", addr: "0x66AE12790Aaac660A907fb1278DfbC58027A3894",
+            priceMain: "12,3403 ETH", priceSub: "per 1 jt token · 1,23×10⁻⁵ /token",
+            amt: 8103.50, cost: 0.1, val: 0.1001, pnlPct: 0.1, valNote: "+0,1% · beli manual 26 Nov", isNew: false, manual: true, realEth: null, prog: null, graduated: true }
+        ];
+        function costOf(t) { return t.cost || COST; }
+        var state = { live: false, ethBal: 0.13745744, block: null };
+
+        /* ================= Util format ================= */
+        function fmtID(n, dp) {
+          return n.toLocaleString("id-ID", { minimumFractionDigits: dp, maximumFractionDigits: dp });
+        }
+        function fmtEth8(n) { return fmtID(n, 8); }
+        function fmtEth6(n) { return fmtID(n, 6); }
+        function fmtAmt(n) { return fmtID(n, 2); }
+        function fmtPct(p) {
+          if (p === null || p === undefined || !isFinite(p)) return "";
+          return (p > 0 ? "+" : (p < 0 ? "−" : "")) + fmtID(Math.abs(p), 1) + "%";
+        }
+        function esc(s) {
+          return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+        function nowWIB() {
+          try {
+            return new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(new Date()) + " WIB";
+          } catch (e) { return new Date().toLocaleString("id-ID") + " WIB"; }
+        }
+        function blockFmt(b) { return b === null ? "" : Number(b).toLocaleString("id-ID").replace(/\./g, "."); }
+
+        /* ================= Render tabel posisi ================= */
+        function statusOf(t) {
+          if (t.graduated) return { cls: "pill-grad", txt: "SUDAH GRADUASI" };
+          if (t.amt <= 0) return { cls: "pill-sold", txt: "SUDAH TERJUAL" };
+          var tc = costOf(t);
+          if (t.val >= tc * 1.1) return { cls: "pill-new", txt: "TP TERCAPAI" };
+          if (t.val <= tc * 0.9) return { cls: "pill-hold", txt: "SL TERSENTUH" };
+          if (t.isNew && !state.live) return { cls: "pill-new", txt: "BARU MASUK" };
+          return { cls: "pill-hold", txt: "HOLD" };
+        }
+        function renderTable() {
+          var html = "";
+          TOKENS.forEach(function (t) {
+            var st = statusOf(t);
+            var tc = costOf(t);
+            var pnlCls = (t.pnlPct === null) ? "" : (t.pnlPct >= 0 ? " gain" : " loss");
+            var curve = "";
+            if (t.realEth !== null && t.realEth !== undefined) {
+              curve = '<span class="curve-info">Kurva: ' + fmtID(t.realEth, 4) + " ETH terkumpul" +
+                (t.prog !== null && t.prog !== undefined ? " · " + fmtID(t.prog, 1) + "% ke graduasi" : "") + "</span>";
+            }
+            var pills = '<span class="pill ' + st.cls + '">' + st.txt + "</span>";
+            if (t.manual) pills += ' <span class="pill pill-manual">MANUAL</span>';
+            var tpslHtml = t.graduated
+              ? '<span class="curve-info">Tidak di-TP/SL bot — sudah graduasi</span>'
+              : '<span class="tpsl">TP <span class="tp">' + fmtID(tc * 1.1, 4) + '</span> · SL <span class="sl">' + fmtID(tc * 0.9, 4) + "</span></span>";
+            html += "<tr>" +
+              '<td class="cell-tok"><div class="tok"><span class="tok-badge">' + esc(t.sym.slice(0, 2)) + "</span><span>" +
+              '<span class="tok-name">' + esc(t.sym) + "</span><br />" +
+              '<span class="tok-full">' + esc(t.note ? t.note : t.name) + "</span><br />" +
+              '<span class="addr">' + esc(t.addr) + "</span></span></div></td>" +
+              '<td class="r" data-label="Jumlah"><span class="amt">' + fmtAmt(t.amt) + "</span></td>" +
+              '<td class="r" data-label="Harga beli"><span class="price-main">' + esc(t.priceMain) + '</span><br /><span class="price-sub">' + esc(t.priceSub) + "</span></td>" +
+              '<td class="r" data-label="Modal"><span class="num">' + fmtID(tc, 3) + " ETH</span></td>" +
+              '<td class="r" data-label="Nilai terakhir"><span class="num">' + fmtEth6(t.val) + ' ETH</span><br /><span class="price-sub' + pnlCls + '">' + esc(t.valNote) + "</span></td>" +
+              '<td data-label="Status">' + pills + "<br />" + tpslHtml + curve + "</td>" +
+              "</tr>";
+          });
+          document.getElementById("posBody").innerHTML = html;
+        }
+
+        /* ================= Grafik (SVG, digambar dari TOKENS) ================= */
+        function niceCeil(x, step) { return Math.ceil(x / step) * step; }
+
+        function renderValueChart() {
+          var W = 520, H = 300, mL = 46, mR = 8, mT = 24, mB = 30;
+          var pw = W - mL - mR, ph = H - mT - mB;
+          var maxV = 0;
+          TOKENS.forEach(function (t) { maxV = Math.max(maxV, t.val, costOf(t)); });
+          var yMax = Math.max(0.0025, niceCeil(maxV * 1.15, 0.0005));
+          var y = function (v) { return mT + ph - (v / yMax) * ph; };
+          var s = '<svg viewBox="0 0 ' + W + " " + H + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">';
+          var rawStep = yMax / 5;
+          var mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+          var norm = rawStep / mag;
+          var step = mag * (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10);
+          for (var gv = 0; gv <= yMax + 1e-9; gv += step) {
+            var gy = y(gv);
+            s += '<line class="grid" x1="' + mL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - mR) + '" y2="' + gy.toFixed(1) + '"/>';
+            s += '<text class="ax" x="' + (mL - 5) + '" y="' + (gy + 3.5).toFixed(1) + '" text-anchor="end">' + fmtID(gv, 4) + "</text>";
+          }
+          var slot = pw / TOKENS.length, bw = Math.min(38, slot * 0.58);
+          TOKENS.forEach(function (t, i) {
+            var cx = mL + slot * i + slot / 2;
+            var bx = cx - bw / 2, by = y(t.val);
+            var tc = costOf(t);
+            var fill = t.val >= tc ? "var(--gain)" : "var(--loss)";
+            s += '<rect x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + (y(0) - by).toFixed(1) + '" rx="3" fill="' + fill + '"/>';
+            s += '<text class="vl" x="' + cx.toFixed(1) + '" y="' + (by - 5).toFixed(1) + '" text-anchor="middle">' + fmtID(t.val, 5) + "</text>";
+            s += '<text class="tk" x="' + cx.toFixed(1) + '" y="' + (H - mB + 16) + '" text-anchor="middle">' + esc(t.sym) + "</text>";
+            var my = y(tc);
+            s += '<line class="ref" x1="' + (bx - 5).toFixed(1) + '" y1="' + my.toFixed(1) + '" x2="' + (bx + bw + 5).toFixed(1) + '" y2="' + my.toFixed(1) + '"/>';
+          });
+          s += '<line class="axis" x1="' + mL + '" y1="' + y(0).toFixed(1) + '" x2="' + (W - mR) + '" y2="' + y(0).toFixed(1) + '"/>';
+          s += "</svg>";
+          document.getElementById("chartValue").innerHTML = s;
+        }
+
+        function renderGradChart() {
+          var known = TOKENS.filter(function (t) { return t.realEth !== null && t.realEth !== undefined; });
+          var el = document.getElementById("chartGrad");
+          if (!known.length) { el.innerHTML = '<p class="c-sub">Data kurva belum tersedia.</p>'; return; }
+          var rowH = 27, mL = 62, mR = 118, mT = 6, mB = 13;
+          var W = 520, H = mT + rowH * TOKENS.length + mB;
+          var pw = W - mL - mR;
+          var maxV = 0;
+          known.forEach(function (t) { if (t.realEth > maxV) maxV = t.realEth; });
+          var xMax = Math.max(0.5, niceCeil(maxV * 1.1, 0.5));
+          var s = '<svg viewBox="0 0 ' + W + " " + H + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">';
+          var ticks = 4;
+          for (var i = 0; i <= ticks; i++) {
+            var tv = xMax * i / ticks, tx = mL + (tv / xMax) * pw;
+            s += '<line class="grid" x1="' + tx.toFixed(1) + '" y1="' + mT + '" x2="' + tx.toFixed(1) + '" y2="' + (H - mB) + '"/>';
+            s += '<text class="ax" x="' + tx.toFixed(1) + '" y="' + (H - 2) + '" text-anchor="middle">' + fmtID(tv, 1) + "</text>";
+          }
+          TOKENS.forEach(function (t, i) {
+            var ry = mT + i * rowH, bh = 15, by = ry + 3;
+            s += '<text class="tk" x="' + (mL - 6) + '" y="' + (by + 12) + '" text-anchor="end">' + esc(t.sym) + "</text>";
+            if (t.realEth === null || t.realEth === undefined) {
+              s += '<text class="ax" x="' + (mL + 2) + '" y="' + (by + 12) + '">menunggu data live…</text>';
+            } else {
+              var bw = Math.max(2, (t.realEth / xMax) * pw);
+              s += '<rect x="' + mL + '" y="' + by + '" width="' + bw.toFixed(1) + '" height="' + bh + '" rx="3" fill="var(--brand)"/>';
+              var lbl = fmtID(t.realEth, 4) + " ETH" + (t.prog !== null && t.prog !== undefined ? " · " + fmtID(t.prog, 1) + "%" : "");
+              s += '<text class="vl" x="' + (mL + bw + 6).toFixed(1) + '" y="' + (by + 12) + '">' + lbl + "</text>";
+            }
+          });
+          s += "</svg>";
+          el.innerHTML = s;
+        }
+
+        function renderCharts() { renderValueChart(); renderGradChart(); }
+
+        /* ================= Ringkasan dari data saat ini ================= */
+        function renderSummary() {
+          var open = TOKENS.filter(function (t) { return t.amt > 0; });
+          var posVal = 0, modalOpen = 0;
+          open.forEach(function (t) { posVal += t.val; modalOpen += costOf(t); });
+          document.getElementById("statBalance").textContent = fmtEth8(state.ethBal);
+          document.getElementById("wBalance").textContent = fmtEth8(state.ethBal);
+          document.getElementById("walletBalRow").textContent = fmtEth8(state.ethBal) + " ETH";
+          document.getElementById("statPosCount").textContent = open.length;
+          document.getElementById("statPosNote").textContent = "Total modal masuk: " + fmtID(modalOpen, 3) + " ETH";
+          var buys = Math.max(0, Math.floor((state.ethBal - RESERVE) / COST));
+          document.getElementById("statBuys").textContent = state.live ? String(buys) : "±63";
+          var unreal = posVal - modalOpen;
+          var plEl = document.getElementById("plUnreal");
+          document.getElementById("plPosVal").textContent = fmtEth6(posVal) + " ETH";
+          plEl.textContent = (unreal >= 0 ? "+" : "−") + fmtEth6(Math.abs(unreal)) + " ETH (" + fmtPct(modalOpen > 0 ? unreal / modalOpen * 100 : 0) + ")";
+          plEl.className = "v " + (unreal >= 0 ? "gain" : "loss");
+          document.getElementById("plTotal").textContent = fmtEth6(state.ethBal + posVal) + " ETH";
+          if (state.live) {
+            document.getElementById("statBalanceNote").textContent = "Saldo live dari RPC GIWA Sepolia" + (state.block ? " · blok " + blockFmt(state.block) : "");
+          }
+        }
+
+        function renderAll() { renderTable(); renderCharts(); renderSummary(); }
+
+        /* ================= Live RPC ================= */
+        var SEL = { balanceOf: "0x70a08231", quoteSell: "0xd98b2f5c", curves: "0x2cc3dc6e", ethToGrad: "0x4e4c2a7f", quoteBuy: "0x0d7a94f6" };
+        function padAddr(a) { return a.toLowerCase().replace("0x", "").padStart(64, "0"); }
+        function padUint(bi) { return bi.toString(16).padStart(64, "0"); }
+        function wordAt(hex, i) {
+          if (!hex || hex === "0x" || hex.length < 2 + (i + 1) * 64) return 0n;
+          return BigInt("0x" + hex.slice(2 + i * 64, 2 + (i + 1) * 64));
+        }
+        function weiToEth(bi) { return Number(bi) / 1e18; }
+
+        function rpcBatch(calls) {
+          var body = calls.map(function (c, i) {
+            return { jsonrpc: "2.0", id: i + 1, method: c.method, params: c.params };
+          });
+          return fetch(RPC, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          }).then(function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+          }).then(function (arr) {
+            if (!Array.isArray(arr)) throw new Error("Respons RPC tidak dikenal");
+            var out = {};
+            arr.forEach(function (x) { out[x.id] = x; });
+            return calls.map(function (c, i) {
+              var x = out[i + 1];
+              if (!x || x.error) throw new Error("RPC error: " + (x && x.error ? x.error.message : "kosong"));
+              return x.result;
+            });
+          });
+        }
+        function rpcSingle(method, params) {
+          return fetch(RPC, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: method, params: params })
+          }).then(function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+          }).then(function (j) {
+            if (j.error) throw new Error(j.error.message || "RPC error");
+            return j.result;
+          });
+        }
+        function ethCall(to, data) { return rpcSingle("eth_call", [{ to: to, data: data }, "latest"]); }
+
+        function setStatus(mode, html) {
+          var box = document.getElementById("dataStatus");
+          box.className = "snapshot" + (mode === "live" ? " is-live" : (mode === "fail" ? " is-fail" : ""));
+          document.getElementById("dataStatusText").innerHTML = html;
+          var nl = document.getElementById("navLive");
+          if (nl) {
+            nl.className = "nav-live" + (mode === "live" ? " is-live" : (mode === "fail" ? " is-fail" : ""));
+            nl.setAttribute("aria-label", mode === "live" ? "Status data: LIVE" : (mode === "fail" ? "Status data: snapshot, live gagal" : "Status data: menghubungi RPC"));
+          }
+        }
+
+        var refreshBusy = false;
+        function setRefreshBtn(loading) {
+          var b = document.getElementById("refreshBtn");
+          if (!b) return;
+          b.disabled = loading;
+          b.classList.toggle("is-loading", loading);
+          b.setAttribute("aria-busy", loading ? "true" : "false");
+          var lbl = b.querySelector(".rf-label");
+          if (lbl) lbl.textContent = loading ? "Memperbarui…" : "Refresh";
+        }
+
+        function refreshLive() {
+          if (refreshBusy) return Promise.resolve();
+          refreshBusy = true;
+          setRefreshBtn(true);
+          var calls = [
+            { method: "eth_getBalance", params: [WALLET, "latest"] },
+            { method: "eth_blockNumber", params: [] }
+          ];
+          TOKENS.forEach(function (t) {
+            calls.push({ method: "eth_call", params: [{ to: t.addr, data: SEL.balanceOf + padAddr(WALLET) }, "latest"] });
+            calls.push({ method: "eth_call", params: [{ to: LP, data: SEL.curves + padAddr(t.addr) }, "latest"] });
+            calls.push({ method: "eth_call", params: [{ to: LP, data: SEL.ethToGrad + padAddr(t.addr) }, "latest"] });
+          });
+          return rpcBatch(calls).then(function (res) {
+            var ethBalWei = BigInt(res[0]);
+            var block = parseInt(res[1], 16);
+            var idx = 2, pending = [];
+            TOKENS.forEach(function (t, k) {
+              var balWei = wordAt(res[idx], 0); idx++;
+              var cv = res[idx]; idx++;
+              var etgWei = wordAt(res[idx], 0); idx++;
+              t._balWei = balWei;
+              t._realEth = weiToEth(wordAt(cv, 3));
+              t._graduated = wordAt(cv, 5) !== 0n;
+              t._etg = weiToEth(etgWei);
+              if (balWei > 0n) {
+                pending.push(
+                  ethCall(LP, SEL.quoteSell + padAddr(t.addr) + padUint(balWei)).then(function (q) {
+                    t._val = weiToEth(wordAt(q, 0));
+                  }).catch(function () { t._val = null; })
+                );
+              } else { t._val = 0; }
+            });
+            return Promise.all(pending).then(function () {
+              state.ethBal = weiToEth(ethBalWei);
+              state.block = block;
+              TOKENS.forEach(function (t) {
+                t.amt = weiToEth(t._balWei);
+                if (t._val !== null && t._val !== undefined) t.val = t._val;
+                t.realEth = t._realEth;
+                t.graduated = t._graduated;
+                var total = t._realEth + t._etg;
+                t.prog = total > 0 ? (t._realEth / total) * 100 : 0;
+                if (t.amt <= 0) { t.pnlPct = null; t.valNote = "saldo 0 · live"; }
+                else {
+                  var tc = costOf(t);
+                  t.pnlPct = (t.val - tc) / tc * 100;
+                  t.valNote = fmtPct(t.pnlPct) + " · live";
+                }
+                t.isNew = false;
+              });
+              state.live = true;
+              renderAll();
+              refreshHistory();
+              setStatus("live", "<b>LIVE</b> — data on-chain GIWA Sepolia · diperbarui " + esc(nowWIB()) + " · blok " + esc(blockFmt(block)) + " · auto-refresh tiap 60 detik.");
+              document.getElementById("wTime").textContent = "Live · " + nowWIB();
+            });
+          }).catch(function (err) {
+            if (!state.live) {
+              setStatus("fail", "<b>Data snapshot</b> — koneksi live ke RPC GIWA Sepolia gagal (" + esc(err.message) + "). Yang tampil adalah data terakhir terverifikasi on-chain per <b>Kamis, 26 November 2026 · 09:13 WIB</b>. Mencoba lagi otomatis tiap 60 detik.");
+            } else {
+              setStatus("fail", "<b>Data terakhir</b> — refresh live gagal (" + esc(err.message) + "), angka yang tampil adalah hasil live terakhir yang berhasil. Mencoba lagi otomatis tiap 60 detik.");
+            }
+          }).then(function () {
+            refreshBusy = false;
+            setRefreshBtn(false);
+          });
+        }
+
+        (function () {
+          var rb = document.getElementById("refreshBtn");
+          if (rb) rb.addEventListener("click", function () { refreshLive(); });
+        })();
+
+        /* ================= Riwayat live: sinkron dari event Transfer =================
+           Daftar statis di atas terverifikasi sampai blok 42321327 (26 Nov · 11:13 WIB).
+           Mulai blok HIST_FROM, semua Transfer token (8 kontrak) yang melibatkan wallet
+           bot ditarik via eth_getLogs tiap refresh — beli/jual bot maupun manual sama-sama
+           tercatat. Tx yang sudah ada di daftar statis dilewati (dedupe per hash). */
+        var TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+        var HIST_FROM = 42313290;
+        var KNOWN_TX = {};
+        [
+          "0x681e545083c63a5efe1e08cb3a336b31481d1b949d20c16fc853e4117e7d3d26",
+          "0xff63552b9437d007b2dece3faff9eed87010ef7ca6e79bde1fcfcefa2a198e67",
+          "0x4da927f4107f021202b92c905950066cbf1a03cead4d50de1cf6121009659d2e",
+          "0x3f01313db3ddef84450654bf09f7fc1d04de99c9088a4bfee158fbd3bec15c76",
+          "0x2d72a9d126564a44ef7ac4d40d1eab44147795aebf3c639436057e680ebe5b09",
+          "0xa85feaf4562622fab75634e3d6fef8c3e633e51c5d6d062cdb3491182804f820",
+          "0x29fcd6eb428274a65ef2f24678cda95b400c3818c13bb1a35780e751e66019ed",
+          "0x375eff616aef5c47143565e18cfedc769a8272443746c6b0c575a7b17852c0fa",
+          "0x81924d468a8e1f4b0f99a1374d9478f90c58ff0e638357cd45239bc6b26e4e71",
+          "0xa44c5dcfed43bce661ebd57faefc2f60727cedcdf9c8b7ff8baf3553ff1f82f7",
+          "0x24716092bd15c3abe8d2f4037013f355ceb78742ae20ea2f3ef7b7141651bda1",
+          "0x3c3d65a11623f0db3b13d6383b88c7e3d63eeec62ea2da4becf7d02e9de04ce4",
+          "0xec617210e29cc6c5235ea569ab243c05202ed3957cbd8967fd535ee25aa04df9"
+        ].forEach(function (h) { KNOWN_TX[h] = true; });
+        var histState = { nextFrom: HIST_FROM, seen: {}, busy: false };
+
+        function fmtHistTime(tsSec) {
+          var months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+          var d = new Date((tsSec + 7 * 3600) * 1000);
+          function p2(n) { return (n < 10 ? "0" : "") + n; }
+          return d.getUTCDate() + " " + months[d.getUTCMonth()] + " · " + p2(d.getUTCHours()) + ":" + p2(d.getUTCMinutes());
+        }
+        function tokenByAddr(a) {
+          var low = String(a).toLowerCase();
+          for (var i = 0; i < TOKENS.length; i++) if (TOKENS[i].addr.toLowerCase() === low) return TOKENS[i];
+          return null;
+        }
+        function updateHistNote(ok, block) {
+          var el = document.getElementById("histNote");
+          if (!el) return;
+          if (ok) {
+            el.textContent = "Sinkron riwayat LIVE aktif — transfer token di wallet bot dicek sampai blok " + blockFmt(block) + " · terakhir dicek " + nowWIB() + ". Entri bertanda “live” di bawah ditambahkan otomatis dari data on-chain.";
+          } else {
+            el.textContent = "Sinkron live riwayat belum berhasil (RPC tidak terjangkau) — yang tampil adalah riwayat terverifikasi sampai 26 Nov · 11:13 WIB. Sinkron dicoba lagi otomatis tiap refresh.";
+          }
+        }
+        function appendHistEntries(entries) {
+          var ul = document.getElementById("histList");
+          if (!ul || !entries.length) return;
+          var html = "";
+          entries.forEach(function (e) {
+            var isIn = e.dirIn;
+            html += "<li>" +
+              '<span class="h-tag ' + (isIn ? "h-buy\">BELI" : "h-sell\">JUAL") + "</span>" +
+              '<div class="h-body">' +
+              '<div class="h-title">' + esc(e.t.sym) + (isIn ? " — terima " : " — kirim ") + fmtAmt(e.amount) + " " + esc(e.t.sym) + " (live)</div>" +
+              '<div class="h-detail">Terdeteksi dari event Transfer on-chain di wallet bot · blok ' + Number(e.block).toLocaleString("id-ID") + "</div>" +
+              '<div class="h-tx">tx ' + esc(e.tx) + "</div>" +
+              "</div>" +
+              '<span class="h-time">' + esc(e.timeStr || "live") + "</span>" +
+              "</li>";
+          });
+          ul.insertAdjacentHTML("beforeend", html);
+        }
+        function syncHistChunk(fromB, toB) {
+          var calls = [];
+          TOKENS.forEach(function (t) {
+            calls.push({ method: "eth_getLogs", params: [{ address: t.addr, fromBlock: "0x" + fromB.toString(16), toBlock: "0x" + toB.toString(16), topics: [TRANSFER_TOPIC, null, "0x" + padAddr(WALLET)] }] });
+            calls.push({ method: "eth_getLogs", params: [{ address: t.addr, fromBlock: "0x" + fromB.toString(16), toBlock: "0x" + toB.toString(16), topics: [TRANSFER_TOPIC, "0x" + padAddr(WALLET)] }] });
+          });
+          return rpcBatch(calls).then(function (results) {
+            var logs = [];
+            results.forEach(function (arr) { if (Array.isArray(arr)) arr.forEach(function (lg) { logs.push(lg); }); });
+            logs.sort(function (a, b) {
+              var d = parseInt(a.blockNumber, 16) - parseInt(b.blockNumber, 16);
+              return d !== 0 ? d : parseInt(a.logIndex, 16) - parseInt(b.logIndex, 16);
+            });
+            var fresh = [];
+            logs.forEach(function (lg) {
+              if (!lg.transactionHash || !lg.address) return;
+              var key = lg.transactionHash.toLowerCase() + ":" + lg.logIndex;
+              if (histState.seen[key] || KNOWN_TX[lg.transactionHash.toLowerCase()]) return;
+              var t = tokenByAddr(lg.address);
+              if (!t || !lg.topics || lg.topics.length < 3) return;
+              var wTopic = "0x" + padAddr(WALLET);
+              var toW = String(lg.topics[2]).toLowerCase() === wTopic;
+              var fromW = String(lg.topics[1]).toLowerCase() === wTopic;
+              if (toW === fromW) return;
+              histState.seen[key] = true;
+              fresh.push({ t: t, dirIn: toW, amount: weiToEth(wordAt(lg.data, 0)), block: parseInt(lg.blockNumber, 16), tx: lg.transactionHash, timeStr: "" });
+            });
+            if (!fresh.length) return;
+            var blocks = [];
+            fresh.forEach(function (e) { if (blocks.indexOf(e.block) === -1) blocks.push(e.block); });
+            if (blocks.length > 12) { appendHistEntries(fresh); return; }
+            var bcalls = blocks.map(function (b) { return { method: "eth_getBlockByNumber", params: ["0x" + b.toString(16), false] }; });
+            return rpcBatch(bcalls).then(function (bres) {
+              var tsByBlock = {};
+              bres.forEach(function (blk, i) { if (blk && blk.timestamp) tsByBlock[blocks[i]] = parseInt(blk.timestamp, 16); });
+              fresh.forEach(function (e) { if (tsByBlock[e.block]) e.timeStr = fmtHistTime(tsByBlock[e.block]); });
+              appendHistEntries(fresh);
+            }).catch(function () { appendHistEntries(fresh); });
+          });
+        }
+        function refreshHistory() {
+          if (histState.busy) return;
+          histState.busy = true;
+          rpcSingle("eth_blockNumber", []).then(function (bnHex) {
+            var latest = parseInt(bnHex, 16);
+            var from = histState.nextFrom;
+            if (from > latest) { histState.busy = false; updateHistNote(true, latest); return; }
+            var chain = Promise.resolve();
+            for (var s = from; s <= latest; s += 4000) {
+              (function (cFrom, cTo) {
+                chain = chain.then(function () { return syncHistChunk(cFrom, cTo); });
+              })(s, Math.min(s + 3999, latest));
+            }
+            chain.then(function () {
+              histState.nextFrom = latest + 1;
+              histState.busy = false;
+              updateHistNote(true, latest);
+            }).catch(function () {
+              histState.busy = false;
+              updateHistNote(false);
+            });
+          }).catch(function () {
+            histState.busy = false;
+            updateHistNote(false);
+          });
+        }
+
+        /* ================= Tombol salin alamat ================= */
+        (function () {
+          var btn = document.getElementById("copyBtn");
+          var addr = document.getElementById("walletAddr");
+          if (!btn || !addr) return;
+          btn.addEventListener("click", function () {
+            var text = addr.textContent.trim();
+            function done() {
+              btn.textContent = "Tersalin ✓";
+              setTimeout(function () { btn.textContent = "Salin Alamat"; }, 2000);
+            }
+            function fallback() {
+              var ta = document.createElement("textarea");
+              ta.value = text;
+              ta.style.position = "fixed"; ta.style.opacity = "0";
+              document.body.appendChild(ta);
+              ta.select();
+              try { document.execCommand("copy"); done(); } catch (e) {}
+              document.body.removeChild(ta);
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text).then(done, fallback);
+            } else { fallback(); }
+          });
+        })();
+
+        /* ================= Panel Test Manual ================= */
+        var account = null, chainId = null, swapSide = "BUY";
+        var pendingSwap = null, pendingBridge = null;
+        var swapSel = document.getElementById("swapToken");
+        TOKENS.forEach(function (t) {
+          var o = document.createElement("option");
+          o.value = t.addr; o.textContent = t.sym + " — " + t.name;
+          swapSel.appendChild(o);
+        });
+        function curToken() {
+          for (var i = 0; i < TOKENS.length; i++) if (TOKENS[i].addr === swapSel.value) return TOKENS[i];
+          return TOKENS[0];
+        }
+        function hasEth() { return typeof window.ethereum !== "undefined"; }
+        /* Provider aktif: wallet injected (EIP-6963 / window.ethereum) atau WalletConnect.
+           Semua request wallet di halaman ini lewat getProvider() supaya jalurnya sama. */
+        var activeProvider = null;
+        var wcProvider = null;
+        var connVia = "";
+        function getProvider() { return activeProvider || (hasEth() ? window.ethereum : null); }
+        function chainName(id) {
+          if (id === GIWA_CHAIN) return "GIWA Sepolia (91342)";
+          if (id === SEPOLIA_CHAIN) return "Ethereum Sepolia (11155111)";
+          return "chain " + id;
+        }
+        function updateWalletInfo() {
+          var el = document.getElementById("walletInfo");
+          if (!account) {
+            el.textContent = "Belum terhubung — klik Connect Wallet untuk pilihan wallet (ekstensi browser atau WalletConnect).";
+          } else {
+            el.textContent = account + " · jaringan: " + chainName(chainId) + (connVia ? " · via " + connVia : "");
+          }
+          var ca = document.getElementById("connectedAddr");
+          var cn = document.getElementById("connectedNet");
+          if (ca) ca.textContent = account || "—";
+          if (cn) cn.textContent = account ? ("Jaringan: " + chainName(chainId) + (connVia ? " · Terhubung via " + connVia : "")) : "—";
+        }
+        function logTo(id, html) {
+          var el = document.getElementById(id);
+          el.innerHTML = html + (el.innerHTML ? "\n" + el.innerHTML : "");
+        }
+        function parseAmount(str) {
+          if (!str) return null;
+          var s = String(str).trim().replace(/\s/g, "").replace(",", ".");
+          if (!/^\d*(\.\d*)?$/.test(s) || s === "" || s === ".") return null;
+          var parts = s.split(".");
+          var whole = parts[0] === "" ? "0" : parts[0];
+          var frac = ((parts[1] || "") + "000000000000000000").slice(0, 18);
+          var v = BigInt(whole) * (10n ** 18n) + BigInt(frac);
+          return v > 0n ? v : null;
+        }
+        function toHex(bi) { return "0x" + bi.toString(16); }
+        function fmtTok(wei) { return fmtID(weiToEth(wei), 4); }
+
+        /* ================= Gerbang + modal pilihan wallet =================
+           Pilihan koneksi: (1) wallet yang mengumumkan diri via EIP-6963 (MetaMask,
+           Rabby, Coinbase Wallet, dll.), (2) window.ethereum lama bila ada,
+           (3) WalletConnect (QR / deep-link) via @walletconnect/ethereum-provider
+           UMD yang dimuat malas dari CDN. WC_PROJECT_ID di bawah adalah Project ID
+           contoh publik dari dokumentasi WalletConnect — terverifikasi aktif lewat
+           RPC proxy WalletConnect; bisa diganti Project ID sendiri dari Reown Cloud
+           tanpa mengubah kode lain. */
+        var WC_PROJECT_ID = "2f05ae7f1116030fde2d36508f472bfb";
+        var discoveredWallets = [];
+        window.addEventListener("eip6963:announceProvider", function (ev) {
+          try {
+            var d = ev.detail;
+            if (!d || !d.info || !d.provider) return;
+            for (var i = 0; i < discoveredWallets.length; i++) {
+              if (discoveredWallets[i].info.uuid === d.info.uuid) return;
+            }
+            discoveredWallets.push(d);
+            renderWalletOptions();
+          } catch (e) {}
+        });
+        function requestWalletAnnouncements() {
+          try { window.dispatchEvent(new Event("eip6963:requestProvider")); } catch (e) {}
+        }
+
+        var modalEl = document.getElementById("walletModal");
+        var modalFeedback = document.getElementById("walletModalFeedback");
+        function setModalFeedback(msg, cls) {
+          modalFeedback.textContent = msg || "";
+          modalFeedback.className = "wc-feedback" + (cls ? " " + cls : "");
+        }
+        function setGateStatus(msg, isErr) {
+          var g = document.getElementById("gateStatus");
+          if (!g) return;
+          g.textContent = msg;
+          g.className = "gate-status" + (isErr ? " err" : "");
+        }
+        function openWalletModal() {
+          requestWalletAnnouncements();
+          renderWalletOptions();
+          setModalFeedback("");
+          modalEl.hidden = false;
+          document.body.style.overflow = "hidden";
+        }
+        function closeWalletModal() {
+          modalEl.hidden = true;
+          document.body.style.overflow = "";
+        }
+        function walletBadge(name) {
+          var initials = String(name || "W").replace(/[^A-Za-z0-9 ]/g, "").split(" ").map(function (w) { return w.charAt(0); }).join("").slice(0, 2).toUpperCase() || "W";
+          return '<span class="wc-ico" aria-hidden="true">' + esc(initials) + "</span>";
+        }
+        function renderWalletOptions() {
+          var list = document.getElementById("walletOptionList");
+          var html = "";
+          var seenProviders = [];
+          discoveredWallets.forEach(function (d, i) {
+            seenProviders.push(d.provider);
+            html += '<button class="wc-opt" type="button" data-wallet-idx="' + i + '">' +
+              (d.info.icon ? '<img src="' + esc(d.info.icon) + '" alt="" />' : walletBadge(d.info.name)) +
+              '<span><span class="wc-name">' + esc(d.info.name) + '</span><span class="wc-desc">Wallet terdeteksi di browser ini</span></span></button>';
+          });
+          if (hasEth() && seenProviders.indexOf(window.ethereum) === -1) {
+            html += '<button class="wc-opt" type="button" data-wallet-legacy="1">' + walletBadge("MetaMask") +
+              '<span><span class="wc-name">Wallet Browser</span><span class="wc-desc">MetaMask / wallet ekstensi yang terpasang di browser ini</span></span></button>';
+          }
+          if (!discoveredWallets.length && !hasEth()) {
+            html += '<div class="wc-none">Tidak ada wallet ekstensi yang terdeteksi di browser ini. WalletConnect di bawah tetap bisa dipakai dari aplikasi wallet di HP.</div>';
+          }
+          html += '<button class="wc-opt" type="button" data-wallet-wc="1">' + walletBadge("WalletConnect") +
+            '<span><span class="wc-name">WalletConnect</span><span class="wc-desc">Pindai QR atau deep-link — MetaMask, Trust Wallet, Rainbow, dan 300+ wallet lain</span></span></button>';
+          list.innerHTML = html;
+          document.getElementById("walletFallback").hidden = !(!discoveredWallets.length && !hasEth());
+          Array.prototype.forEach.call(list.querySelectorAll("[data-wallet-idx]"), function (btn) {
+            btn.addEventListener("click", function () {
+              var d = discoveredWallets[Number(btn.getAttribute("data-wallet-idx"))];
+              if (d) connectWithProvider(d.provider, d.info.name);
+            });
+          });
+          Array.prototype.forEach.call(list.querySelectorAll("[data-wallet-legacy]"), function (btn) {
+            btn.addEventListener("click", function () { connectWithProvider(window.ethereum, "Wallet Browser"); });
+          });
+          Array.prototype.forEach.call(list.querySelectorAll("[data-wallet-wc]"), function (btn) {
+            btn.addEventListener("click", function () { connectViaWalletConnect(btn); });
+          });
+        }
+
+        function attachProviderListeners(prov) {
+          if (!prov || !prov.on || prov._dashListeners) return;
+          prov._dashListeners = true;
+          prov.on("accountsChanged", function (accs) {
+            account = accs && accs[0] ? accs[0] : null;
+            if (!account) { lockDashboard("Wallet terputus dari aplikasi wallet. Hubungkan lagi untuk membuka dashboard."); return; }
+            updateWalletInfo(); refreshSwapBalHint();
+          });
+          prov.on("chainChanged", function (cid) {
+            chainId = parseInt(cid, 16);
+            updateWalletInfo();
+          });
+          prov.on("disconnect", function () {
+            if (prov === activeProvider) lockDashboard("Koneksi wallet terputus. Hubungkan lagi untuk membuka dashboard.");
+          });
+        }
+
+        function connectWithProvider(prov, label) {
+          if (!prov) { setModalFeedback("Wallet tidak ditemukan. Pasang ekstensi wallet atau pakai WalletConnect.", "err"); return Promise.resolve(); }
+          setModalFeedback("Membuka " + label + "… setujui permintaan koneksi di wallet-mu.");
+          return prov.request({ method: "eth_requestAccounts" }).then(function (accs) {
+            account = accs && accs[0] ? accs[0] : null;
+            if (!account) throw new Error("Tidak ada akun yang dipilih di wallet.");
+            activeProvider = prov;
+            connVia = label;
+            attachProviderListeners(prov);
+            return prov.request({ method: "eth_chainId" });
+          }).then(function (cid) {
+            chainId = parseInt(cid, 16);
+            onWalletConnected(label);
+          }).catch(function (e) {
+            setModalFeedback("Gagal terhubung: " + (e && e.message ? e.message : e), "err");
+            setGateStatus("Koneksi wallet gagal / dibatalkan. Coba lagi.", true);
+          });
+        }
+
+        function loadScriptOnce(src, globalName) {
+          if (window[globalName]) return Promise.resolve();
+          return new Promise(function (resolve, reject) {
+            var s = document.createElement("script");
+            s.src = src; s.async = true;
+            s.onload = function () { if (window[globalName]) resolve(); else reject(new Error("Library " + globalName + " tidak termuat.")); };
+            s.onerror = function () { reject(new Error("Gagal memuat library WalletConnect dari CDN — cek koneksi internet.")); };
+            document.head.appendChild(s);
+          });
+        }
+
+        function connectViaWalletConnect(btn) {
+          btn.disabled = true;
+          setModalFeedback("Menyiapkan WalletConnect… modal QR / pilihan aplikasi wallet akan terbuka. Setujui koneksinya di wallet-mu.");
+          loadScriptOnce("https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.21.1/dist/index.umd.js", "WalletConnectEthereumProvider")
+            .then(function () {
+              if (wcProvider) return wcProvider;
+              return window.WalletConnectEthereumProvider.init({
+                projectId: WC_PROJECT_ID,
+                chains: [SEPOLIA_CHAIN],
+                optionalChains: [GIWA_CHAIN],
+                showQrModal: true,
+                rpcMap: { 91342: RPC, 11155111: L1_RPC }
+              }).then(function (p) { wcProvider = p; return p; });
+            })
+            .then(function (p) {
+              return p.connect().then(function () {
+                var accs = p.accounts || [];
+                account = accs[0] || null;
+                if (!account) throw new Error("WalletConnect terhubung tapi tidak mengembalikan akun.");
+                activeProvider = p;
+                connVia = "WalletConnect";
+                attachProviderListeners(p);
+                chainId = p.chainId ? Number(p.chainId) : null;
+                onWalletConnected("WalletConnect");
+              });
+            })
+            .catch(function (e) {
+              setModalFeedback("WalletConnect gagal: " + (e && e.message ? e.message : e) + " — coba lagi, atau pakai wallet ekstensi / buka link dashboard dari browser aplikasi wallet.", "err");
+              document.getElementById("walletFallback").hidden = false;
+            })
+            .then(function () { btn.disabled = false; });
+        }
+
+        function onWalletConnected(label) {
+          updateWalletInfo();
+          refreshSwapBalHint();
+          closeWalletModal();
+          unlockDashboard();
+          setGateStatus("Terhubung via " + label + ": " + account);
+        }
+
+        function unlockDashboard() {
+          dashboardUnlocked = true;
+          document.getElementById("gateView").hidden = true;
+          document.getElementById("dashboardView").hidden = false;
+          window.scrollTo(0, 0);
+          refreshLive();
+          refreshHistory();
+          startLiveLoop();
+        }
+        function lockDashboard(msg) {
+          account = null; chainId = null; activeProvider = null; connVia = "";
+          dashboardUnlocked = false;
+          stopLiveLoop();
+          updateWalletInfo();
+          document.getElementById("dashboardView").hidden = true;
+          document.getElementById("gateView").hidden = false;
+          if (msg) setGateStatus(msg, false);
+          window.scrollTo(0, 0);
+        }
+        function disconnectWallet() {
+          var prov = activeProvider;
+          var done = function () { lockDashboard("Wallet terputus. Hubungkan lagi untuk membuka dashboard."); };
+          if (prov && prov === wcProvider && prov.disconnect) {
+            prov.disconnect().then(done, done);
+          } else if (prov && prov.request) {
+            /* Cabut izin eth_accounts bila wallet mendukung (MetaMask) — gagal pun dashboard tetap terkunci lagi. */
+            prov.request({ method: "wallet_revokePermissions", params: [{ eth_accounts: {} }] }).then(done, done);
+          } else { done(); }
+        }
+
+        document.getElementById("gateConnectBtn").addEventListener("click", openWalletModal);
+        document.getElementById("walletModalClose").addEventListener("click", closeWalletModal);
+        modalEl.addEventListener("click", function (ev) { if (ev.target === modalEl) closeWalletModal(); });
+        document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && !modalEl.hidden) closeWalletModal(); });
+        requestWalletAnnouncements();
+        renderWalletOptions();
+        function switchChain(hex, addParams) {
+          var prov = getProvider();
+          if (!prov) { openWalletModal(); return; }
+          prov.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] })
+            .catch(function (e) {
+              if (e && e.code === 4902 && addParams) {
+                return prov.request({ method: "wallet_addEthereumChain", params: [addParams] });
+              }
+              throw e;
+            })
+            .catch(function (e2) { logTo("swapLog", '<span class="err">Gagal pindah jaringan: ' + esc(e2.message || e2) + "</span>"); });
+        }
+        function refreshSwapBalHint() {
+          var hint = document.getElementById("swapBalHint");
+          var t = curToken();
+          if (!account) { hint.textContent = ""; return; }
+          ethCall(t.addr, SEL.balanceOf + padAddr(account)).then(function (r) {
+            hint.textContent = "Saldo " + t.sym + " di wallet kamu: " + fmtTok(wordAt(r, 0)) + " " + t.sym;
+          }).catch(function () { hint.textContent = ""; });
+        }
+        function waitReceipt(hash, logId) {
+          var tries = 0;
+          return new Promise(function (resolve) {
+            (function poll() {
+              tries++;
+              getProvider().request({ method: "eth_getTransactionReceipt", params: [hash] }).then(function (rc) {
+                if (rc) { resolve(rc); return; }
+                if (tries > 40) { resolve(null); return; }
+                setTimeout(poll, 3000);
+              }).catch(function () {
+                if (tries > 40) { resolve(null); return; }
+                setTimeout(poll, 3000);
+              });
+            })();
+          });
+        }
+
+        document.getElementById("connectBtn").addEventListener("click", openWalletModal);
+        document.getElementById("disconnectBtn").addEventListener("click", disconnectWallet);
+        document.getElementById("disconnectBtn2").addEventListener("click", disconnectWallet);
+        document.getElementById("switchGiwaBtn").addEventListener("click", function () {
+          switchChain(GIWA_HEX, { chainId: GIWA_HEX, chainName: "GIWA Sepolia Testnet", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: [RPC] });
+        });
+        document.getElementById("switchSepoliaBtn").addEventListener("click", function () {
+          switchChain(SEPOLIA_HEX, { chainId: SEPOLIA_HEX, chainName: "Ethereum Sepolia", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: [L1_RPC] });
+        });
+        updateWalletInfo();
+
+        var sideBuy = document.getElementById("sideBuy"), sideSell = document.getElementById("sideSell");
+        var sellAllBtn = document.getElementById("sellAllBtn"), sellAllHint = document.getElementById("sellAllHint");
+        function setSide(s) {
+          swapSide = s;
+          sideBuy.setAttribute("aria-pressed", s === "BUY" ? "true" : "false");
+          sideSell.setAttribute("aria-pressed", s === "SELL" ? "true" : "false");
+          document.getElementById("swapAmountLabel").textContent = s === "BUY" ? "Jumlah ETH yang dibelanjakan" : "Jumlah token yang dijual";
+          sellAllBtn.style.display = s === "SELL" ? "" : "none";
+          sellAllHint.style.display = s === "SELL" ? "" : "none";
+          hideSwapConfirm();
+        }
+        sellAllBtn.addEventListener("click", function () {
+          var t = curToken();
+          if (!account) { logTo("swapLog", '<span class="err">Connect wallet dulu — tombol ini membaca saldo token di wallet yang terhubung.</span>'); return; }
+          sellAllBtn.disabled = true;
+          ethCall(t.addr, SEL.balanceOf + padAddr(account)).then(function (r) {
+            var bal = wordAt(r, 0);
+            if (bal <= 0n) {
+              logTo("swapLog", '<span class="err">Saldo ' + esc(t.sym) + " di wallet kamu 0 — tidak ada yang bisa dijual.</span>");
+              return;
+            }
+            var whole = bal / (10n ** 18n);
+            var frac = (bal % (10n ** 18n)).toString().padStart(18, "0").replace(/0+$/, "");
+            document.getElementById("swapAmount").value = whole.toString() + (frac ? "." + frac : "");
+            logTo("swapLog", "Jumlah jual diisi seluruh saldo: " + fmtTok(bal) + " " + esc(t.sym) + ' — klik "Lihat Quote" untuk lanjut.');
+          }).catch(function (e) {
+            logTo("swapLog", '<span class="err">Gagal membaca saldo: ' + esc(e.message) + "</span>");
+          }).then(function () { sellAllBtn.disabled = false; });
+        });
+        sideBuy.addEventListener("click", function () { setSide("BUY"); });
+        sideSell.addEventListener("click", function () { setSide("SELL"); });
+        swapSel.addEventListener("change", function () { refreshSwapBalHint(); hideSwapConfirm(); });
+
+        function hideSwapConfirm() {
+          pendingSwap = null;
+          document.getElementById("swapConfirm").className = "confirm-box";
+          document.getElementById("quoteBox").className = "quote-box";
+        }
+
+        document.getElementById("quoteBtn").addEventListener("click", function () {
+          var t = curToken();
+          var amtWei = parseAmount(document.getElementById("swapAmount").value);
+          var qBox = document.getElementById("quoteBox");
+          hideSwapConfirm();
+          if (!amtWei) { logTo("swapLog", '<span class="err">Jumlah tidak valid — isi angka lebih besar dari 0.</span>'); return; }
+          if (!account) { logTo("swapLog", '<span class="err">Connect wallet dulu sebelum kirim transaksi (quote tetap bisa dilihat).</span>'); }
+          var callData = swapSide === "BUY"
+            ? SEL.quoteBuy + padAddr(t.addr) + padUint(amtWei)
+            : SEL.quoteSell + padAddr(t.addr) + padUint(amtWei);
+          qBox.className = "quote-box show";
+          qBox.innerHTML = "Mengambil quote dari launchpad…";
+          ethCall(LP, callData).then(function (r) {
+            var outWei = wordAt(r, 0);
+            var feeWei = wordAt(r, 1);
+            if (swapSide === "BUY") {
+              var minOut = outWei * 97n / 100n;
+              qBox.innerHTML = '<div class="q-main">≈ ' + fmtTok(outWei) + " " + esc(t.sym) + "</div>" +
+                '<div class="q-sub">untuk ' + fmtEth6(weiToEth(amtWei)) + " ETH · fee launchpad ≈ " + fmtEth6(weiToEth(feeWei)) + " ETH · minimum diterima (slippage 3%): " + fmtTok(minOut) + " " + esc(t.sym) + "</div>";
+              pendingSwap = { side: "BUY", token: t, amtWei: amtWei, outWei: outWei, minOut: minOut };
+            } else {
+              var minEth = outWei * 97n / 100n;
+              qBox.innerHTML = '<div class="q-main">≈ ' + fmtEth6(weiToEth(outWei)) + " ETH</div>" +
+                '<div class="q-sub">untuk ' + fmtTok(amtWei) + " " + esc(t.sym) + " · fee launchpad ≈ " + fmtEth6(weiToEth(feeWei)) + " ETH · minimum diterima (slippage 3%): " + fmtEth6(weiToEth(minEth)) + " ETH</div>";
+              pendingSwap = { side: "SELL", token: t, amtWei: amtWei, outWei: outWei, minOut: minEth };
+            }
+            var rows = "";
+            function row(k, v) { return '<li><span class="ck">' + k + '</span><span class="cv">' + v + "</span></li>"; }
+            rows += row("Aksi", (swapSide === "BUY" ? "BELI " : "JUAL ") + t.sym + " (" + t.name + ")");
+            rows += row("Jaringan", "GIWA Sepolia Testnet (chain 91342) — testnet");
+            rows += row("Dari wallet", account ? esc(account) : "(belum connect)");
+            rows += row("Ke kontrak", "Launchpad Gamatiles " + LP);
+            if (swapSide === "BUY") {
+              rows += row("ETH dikirim", fmtEth6(weiToEth(amtWei)) + " ETH");
+              rows += row("Perkiraan diterima", "≈ " + fmtTok(outWei) + " " + t.sym);
+              rows += row("Minimum diterima", fmtTok(pendingSwap.minOut) + " " + t.sym);
+            } else {
+              rows += row("Token dijual", fmtTok(amtWei) + " " + t.sym);
+              rows += row("Perkiraan diterima", "≈ " + fmtEth6(weiToEth(outWei)) + " ETH");
+              rows += row("Minimum diterima", fmtEth6(weiToEth(pendingSwap.minOut)) + " ETH");
+            }
+            document.getElementById("swapConfirmList").innerHTML = rows;
+            document.getElementById("swapConfirm").className = "confirm-box show";
+          }).catch(function (e) {
+            qBox.innerHTML = '<span class="err">Quote gagal: ' + esc(e.message) + "</span>";
+          });
+        });
+
+        document.getElementById("swapCancelBtn").addEventListener("click", hideSwapConfirm);
+
+        document.getElementById("swapSendBtn").addEventListener("click", function () {
+          if (!pendingSwap) return;
+          if (!account) { logTo("swapLog", '<span class="err">Connect wallet dulu.</span>'); return; }
+          if (chainId !== GIWA_CHAIN) {
+            logTo("swapLog", '<span class="err">Wallet masih di jaringan ' + esc(chainName(chainId)) + ' — pindah ke GIWA Sepolia dulu (tombol di atas).</span>');
+            return;
+          }
+          var p = pendingSwap, btn = this;
+          btn.disabled = true;
+          function sendSwap() {
+            var data, value;
+            if (p.side === "BUY") {
+              data = "0xcce7ec13" + padAddr(p.token.addr) + padUint(p.minOut);
+              value = toHex(p.amtWei);
+            } else {
+              data = "0x6a272462" + padAddr(p.token.addr) + padUint(p.amtWei) + padUint(p.minOut);
+              value = "0x0";
+            }
+            return getProvider().request({ method: "eth_sendTransaction", params: [{ from: account, to: LP, data: data, value: value }] })
+              .then(function (hash) {
+                logTo("swapLog", "Tx terkirim: " + hash + " — menunggu konfirmasi…");
+                hideSwapConfirm();
+                return waitReceipt(hash, "swapLog").then(function (rc) {
+                  if (rc && rc.status === "0x1") {
+                    logTo("swapLog", '<span class="ok">Berhasil!</span> Tx ' + hash + " terkonfirmasi di blok " + parseInt(rc.blockNumber, 16) + ".");
+                    refreshLive(); refreshSwapBalHint();
+                  } else if (rc) {
+                    logTo("swapLog", '<span class="err">Tx gagal on-chain (status 0): ' + hash + "</span>");
+                  } else {
+                    logTo("swapLog", "Tx " + hash + " belum terkonfirmasi setelah 2 menit — cek di wallet/explorer.");
+                  }
+                });
+              });
+          }
+          var prep = Promise.resolve();
+          if (p.side === "SELL") {
+            prep = ethCall(p.token.addr, "0xdd62ed3e" + padAddr(account) + padAddr(LP)).then(function (r) {
+              var allowance = wordAt(r, 0);
+              if (allowance < p.amtWei) {
+                logTo("swapLog", "Launchpad belum punya izin (allowance) atas token kamu — mengirim transaksi approve dulu, tanda tangani di wallet…");
+                return getProvider().request({
+                  method: "eth_sendTransaction",
+                  params: [{ from: account, to: p.token.addr, data: "0x095ea7b3" + padAddr(LP) + padUint(p.amtWei), value: "0x0" }]
+                }).then(function (h) {
+                  logTo("swapLog", "Approve terkirim: " + h + " — menunggu konfirmasi…");
+                  return waitReceipt(h, "swapLog");
+                }).then(function (rc) {
+                  if (!rc || rc.status !== "0x1") throw new Error("Approve gagal / belum terkonfirmasi — jual dibatalkan.");
+                  logTo("swapLog", '<span class="ok">Approve terkonfirmasi.</span> Lanjut mengirim transaksi jual — tanda tangani lagi di wallet…');
+                });
+              }
+            });
+          }
+          prep.then(sendSwap).catch(function (e) {
+            logTo("swapLog", '<span class="err">Transaksi dibatalkan/gagal: ' + esc(e.message || e) + "</span>");
+          }).then(function () { btn.disabled = false; });
+        });
+
+        /* ---------- Bridge manual ---------- */
+        function hideBridgeConfirm() {
+          pendingBridge = null;
+          document.getElementById("bridgeConfirm").className = "confirm-box";
+        }
+        document.getElementById("bridgeCancelBtn").addEventListener("click", hideBridgeConfirm);
+        document.getElementById("bridgePrepBtn").addEventListener("click", function () {
+          hideBridgeConfirm();
+          var amtWei = parseAmount(document.getElementById("bridgeAmount").value);
+          if (!amtWei) { logTo("bridgeLog", '<span class="err">Jumlah tidak valid — isi angka lebih besar dari 0.</span>'); return; }
+          if (!account) { logTo("bridgeLog", '<span class="err">Connect wallet dulu (tombol Connect Wallet di panel Swap).</span>'); return; }
+          pendingBridge = { amtWei: amtWei };
+          function row(k, v) { return '<li><span class="ck">' + k + '</span><span class="cv">' + v + "</span></li>"; }
+          var rows = "";
+          rows += row("Aksi", "BRIDGE ETH");
+          rows += row("Dari jaringan", "Ethereum Sepolia (chain 11155111) — testnet");
+          rows += row("Ke jaringan", "GIWA Sepolia (chain 91342) — testnet");
+          rows += row("Jumlah", fmtEth6(weiToEth(amtWei)) + " ETH (+ gas L1)");
+          rows += row("Kontrak bridge", BRIDGE);
+          rows += row("Penerima di GIWA", esc(account));
+          document.getElementById("bridgeConfirmList").innerHTML = rows;
+          document.getElementById("bridgeConfirm").className = "confirm-box show";
+        });
+        document.getElementById("bridgeSendBtn").addEventListener("click", function () {
+          if (!pendingBridge) return;
+          if (!account) { logTo("bridgeLog", '<span class="err">Connect wallet dulu.</span>'); return; }
+          if (chainId !== SEPOLIA_CHAIN) {
+            logTo("bridgeLog", '<span class="err">Wallet masih di jaringan ' + esc(chainName(chainId)) + ' — bridge harus dikirim dari Ethereum Sepolia. Pindah dulu (tombol "Pindah ke Ethereum Sepolia").</span>');
+            return;
+          }
+          var btn = this;
+          btn.disabled = true;
+          // depositETHTo(address _to, uint32 _minGasLimit, bytes _extraData) — _minGasLimit uint32, extraData kosong
+          var data = "0x9a2ac6d5" + padAddr(account) + padUint(200000n) + padUint(96n) + padUint(0n);
+          getProvider().request({
+            method: "eth_sendTransaction",
+            params: [{ from: account, to: BRIDGE, data: data, value: toHex(pendingBridge.amtWei) }]
+          }).then(function (hash) {
+            logTo("bridgeLog", "Deposit terkirim: " + hash + " — menunggu konfirmasi L1…");
+            hideBridgeConfirm();
+            return waitReceipt(hash, "bridgeLog").then(function (rc) {
+              if (rc && rc.status === "0x1") {
+                logTo("bridgeLog", '<span class="ok">Deposit L1 terkonfirmasi</span> di blok ' + parseInt(rc.blockNumber, 16) + ". ETH akan tiba di alamat yang sama di GIWA Sepolia dalam beberapa menit — saldo GIWA di dashboard ini akan ikut naik saat live refresh berikutnya.");
+              } else if (rc) {
+                logTo("bridgeLog", '<span class="err">Deposit gagal on-chain (status 0): ' + hash + "</span>");
+              } else {
+                logTo("bridgeLog", "Tx " + hash + " belum terkonfirmasi setelah 2 menit — cek di wallet/explorer.");
+              }
+            });
+          }).catch(function (e) {
+            logTo("bridgeLog", '<span class="err">Bridge dibatalkan/gagal: ' + esc(e.message || e) + "</span>");
+          }).then(function () { btn.disabled = false; });
+        });
+
+        /* ================= Navigasi mengambang: tandai bagian aktif ================= */
+        (function () {
+          var links = Array.prototype.slice.call(document.querySelectorAll(".floating-nav a[data-nav]"));
+          if (!links.length || !("IntersectionObserver" in window)) return;
+          var byId = {};
+          links.forEach(function (a) { byId[a.getAttribute("data-nav")] = a; });
+          function setActive(id) {
+            links.forEach(function (a) {
+              var on = a.getAttribute("data-nav") === id;
+              a.classList.toggle("is-active", on);
+              if (on) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current");
+            });
+          }
+          setActive("ringkasan");
+          var visible = {};
+          var obs = new IntersectionObserver(function (entries) {
+            entries.forEach(function (en) {
+              if (en.isIntersecting) visible[en.target.id] = en.boundingClientRect.top;
+              else delete visible[en.target.id];
+            });
+            var ids = Object.keys(visible);
+            if (!ids.length) return;
+            ids.sort(function (x, y) { return Math.abs(visible[x]) - Math.abs(visible[y]); });
+            setActive(ids[0]);
+          }, { rootMargin: "-30% 0px -55% 0px", threshold: 0 });
+          ["ringkasan", "bot", "grafik", "posisi", "aturan", "manual"].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) obs.observe(el);
+          });
+          links.forEach(function (a) {
+            a.addEventListener("click", function () { setActive(a.getAttribute("data-nav")); });
+          });
+        })();
+
+        /* ================= Jalan =================
+           Dashboard terkunci di balik gerbang connect wallet: render awal hanya
+           menggambar isi (masih tersembunyi); data live + auto-refresh 60 detik
+           baru jalan setelah wallet terhubung (unlockDashboard). */
+        var liveTimer = null;
+        var botEnabled = true;
+        var dashboardUnlocked = false;
+        function startLiveLoop() {
+          if (liveTimer || !dashboardUnlocked || !botEnabled) return;
+          liveTimer = setInterval(refreshLive, 60000);
+        }
+        function stopLiveLoop() {
+          if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+        }
+        (function () {
+          var tg = document.getElementById("botToggle");
+          if (!tg) return;
+          tg.addEventListener("click", function () {
+            botEnabled = !botEnabled;
+            tg.setAttribute("aria-checked", botEnabled ? "true" : "false");
+            document.getElementById("botToggleLabel").textContent = botEnabled ? "Live Aktif" : "Live Nonaktif";
+            document.getElementById("botDot").className = "bot-dot" + (botEnabled ? "" : " off");
+            document.getElementById("botStatusText").textContent = botEnabled ? "Pemantauan Live Aktif" : "Pemantauan Live Nonaktif";
+            document.getElementById("botStatusDesc").textContent = botEnabled
+              ? "Bot memantau 8 posisi dan mengecek TP/SL tiap 15 menit. Pemantauan live dashboard berjalan — data diperbarui otomatis tiap 60 detik."
+              : "Pemantauan live dashboard sedang dimatikan dari panel ini — auto-refresh berhenti dan angka yang tampil adalah data terakhir. Bot trading di latar tidak ikut berhenti dari tombol ini.";
+            document.getElementById("botRowLive").textContent = botEnabled ? "Jalan · refresh 60 detik" : "Berhenti";
+            if (botEnabled) { refreshLive(); startLiveLoop(); }
+            else {
+              stopLiveLoop();
+              setStatus("", "<b>Pemantauan live dijeda</b> — auto-refresh dimatikan dari panel Aktifkan Bot. Klik tombol Refresh atau aktifkan lagi bot untuk memperbarui data.");
+            }
+          });
+        })();
+        renderAll();
+      })();
+    </script>
+  </body>
+</html>
