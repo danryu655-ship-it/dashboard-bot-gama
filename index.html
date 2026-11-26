@@ -264,6 +264,13 @@
       }
       .seg button[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: #fff; }
       @media (prefers-color-scheme: dark) { .seg button[aria-pressed="true"] { color: #08130c; } }
+
+      /* ---------- Saklar tampilan dompet (terhubung / bot) ---------- */
+      .view-switch { margin: 0 0 16px; }
+      .vs-label { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 7px; }
+      .view-seg { margin-bottom: 8px; flex-wrap: wrap; }
+      .view-note { font-size: 13.5px; color: var(--ink-2); margin: 0; }
+      .view-note b { color: var(--ink); }
       .btn {
         font-family: var(--sans); font-size: 14.5px; font-weight: 600; cursor: pointer;
         border-radius: 8px; padding: 9px 16px; min-height: 42px; border: 1px solid var(--line);
@@ -413,7 +420,30 @@
       .wc-fallback { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 14px; }
       .wc-fb-title { font-weight: 700; font-size: 14.5px; margin: 0 0 8px; }
       .wc-steps { margin: 0 0 14px; padding-left: 20px; font-size: 13.5px; color: var(--ink-2); }
-      .wc-steps li { margin-bottom: 5px; }
+      .wc-steps li { margin-bottom: 5px }
+
+      /* ---------- Panel QR WalletConnect (QR utama, tanpa daftar remote) ---------- */
+      .wc-qr { margin-top: 2px; }
+      .wc-back {
+        background: none; border: none; padding: 6px 0; cursor: pointer;
+        font-family: var(--sans); font-size: 14px; font-weight: 700; color: var(--brand);
+      }
+      .wc-back:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+      .wc-qr-title { font-weight: 700; font-size: 16px; text-align: center; margin: 4px 0 10px; }
+      .wc-qr-box {
+        background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px;
+        width: 248px; max-width: 100%; min-height: 248px; margin: 0 auto;
+        display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+      }
+      .wc-qr-box svg { width: 100%; height: auto; display: block; }
+      .wc-qr-box img { max-width: 100%; height: auto; display: block; }
+      .wc-qr-wait { color: #4a554c; font-size: 13.5px; text-align: center; line-height: 1.45; }
+      .wc-qr-status { font-size: 13.5px; color: var(--ink-2); text-align: center; margin: 12px 0 4px; min-height: 20px; }
+      .wc-qr-status.err { color: var(--loss); }
+      .wc-qr .btn, .wc-qr a.btn { margin-top: 8px; }
+      a.btn { display: block; text-align: center; text-decoration: none; box-sizing: border-box; line-height: 24px; }
+      .wc-wlist { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+      a.wc-opt { text-decoration: none; box-sizing: border-box; }
 
       /* ---------- Wallet bar & disconnect ---------- */
       .wallet-bar {
@@ -524,6 +554,14 @@
           </div>
           <button class="disconnect-btn" id="disconnectBtn" type="button">Disconnect Wallet</button>
         </div>
+        <div class="view-switch">
+          <span class="vs-label" id="viewSwitchLabel">Tampilkan data dompet</span>
+          <div class="seg view-seg" role="group" aria-labelledby="viewSwitchLabel">
+            <button type="button" id="viewConnBtn" aria-pressed="true">Dompet Terhubung</button>
+            <button type="button" id="viewBotBtn" aria-pressed="false">Dompet Bot (0x10bE…52bf)</button>
+          </div>
+          <p class="view-note" id="viewNote"></p>
+        </div>
         <header class="top" id="ringkasan">
           <div class="status-line">
             <span class="dot" aria-hidden="true"></span>
@@ -548,12 +586,12 @@
             <div class="value"><span id="statPosCount">8</span> <small>token</small></div>
             <div class="note" id="statPosNote">Total modal masuk: 0,124 ETH</div>
           </div>
-          <div class="stat">
+          <div class="stat" id="statCardReserve">
             <div class="label">Cadangan Minimum</div>
             <div class="value">0,01 <small>ETH</small></div>
             <div class="note">Tidak pernah disentuh — buat gas &amp; darurat</div>
           </div>
-          <div class="stat">
+          <div class="stat" id="statCardBuys">
             <div class="label">Sisa Kemampuan Beli</div>
             <div class="value"><span id="statBuys">±63</span> <small>kali beli</small></div>
             <div class="note">0,002 ETH per beli, tanpa batas harian</div>
@@ -588,10 +626,10 @@
           <p class="sec-sub">Dua grafik ini digambar dari angka yang sama dengan tabel posisi di bawah — dan ikut diperbarui tiap kali data live masuk.</p>
           <div class="cols cols-start">
             <div class="chart-card">
-              <h3>Nilai Posisi vs Modal</h3>
-              <p class="c-sub">Nilai jual sekarang (quoteSell) dibanding modal tiap posisi, dalam ETH. Garis putus-putus di tiap batang adalah modal posisi itu (0,002 ETH untuk posisi bot, 0,012 ETH untuk SOLANA, 0,1 ETH untuk AF).</p>
+              <h3 id="chartValueTitle">Nilai Posisi vs Modal</h3>
+              <p class="c-sub" id="chartValueSub">Nilai jual sekarang (quoteSell) dibanding modal tiap posisi, dalam ETH. Garis putus-putus di tiap batang adalah modal posisi itu (0,002 ETH untuk posisi bot, 0,012 ETH untuk SOLANA, 0,1 ETH untuk AF).</p>
               <div id="chartValue" role="img" aria-label="Grafik batang nilai posisi delapan token dibanding modal masing-masing"></div>
-              <div class="chart-legend">
+              <div class="chart-legend" id="chartValueLegend">
                 <span><span class="sw" style="background:var(--gain)"></span>Di atas / pas modal</span>
                 <span><span class="sw" style="background:var(--loss)"></span>Di bawah modal</span>
                 <span>- - Garis modal tiap token</span>
@@ -611,7 +649,7 @@
 
         <section id="posisi" aria-labelledby="pos-title">
           <h2 id="pos-title">Posisi yang Dipegang</h2>
-          <p class="sec-sub">Harga beli dihitung dari transaksi pembelian masing-masing token. Target jual (TP) +10% dan batas rugi (SL) −10% dihitung dari modal tiap posisi. AF adalah holding manual yang sudah graduasi — tidak di-TP/SL bot.</p>
+          <p class="sec-sub" id="posSub">Harga beli dihitung dari transaksi pembelian masing-masing token. Target jual (TP) +10% dan batas rugi (SL) −10% dihitung dari modal tiap posisi. AF adalah holding manual yang sudah graduasi — tidak di-TP/SL bot.</p>
           <div class="table-card">
             <table>
               <colgroup>
@@ -621,9 +659,9 @@
                 <tr>
                   <th>Token</th>
                   <th class="r">Jumlah Dipegang</th>
-                  <th class="r">Harga Beli</th>
-                  <th class="r">Modal</th>
-                  <th class="r">Nilai Terakhir</th>
+                  <th class="r" id="thPrice">Harga Beli</th>
+                  <th class="r" id="thCost">Modal</th>
+                  <th class="r" id="thVal">Nilai Terakhir</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -639,16 +677,16 @@
             <div class="panel">
               <h3>Ringkasan P/L</h3>
               <ul class="rules">
-                <li><span class="k">Total nilai wallet (snapshot 08:32)</span><span class="v">0,05136 ETH</span></li>
-                <li><span class="k">Modal yang masuk saat itu</span><span class="v">0,052 ETH</span></li>
-                <li><span class="k">Selisih (snapshot)</span><span class="v loss">−0,00064 ETH (−1,2%)</span></li>
-                <li><span class="k">Rugi terealisasi (sudah terjual)</span><span class="v loss">−0,00674 ETH</span></li>
+                <li class="pl-bot-only"><span class="k">Total nilai wallet (snapshot 08:32)</span><span class="v">0,05136 ETH</span></li>
+                <li class="pl-bot-only"><span class="k">Modal yang masuk saat itu</span><span class="v">0,052 ETH</span></li>
+                <li class="pl-bot-only"><span class="k">Selisih (snapshot)</span><span class="v loss">−0,00064 ETH (−1,2%)</span></li>
+                <li class="pl-bot-only"><span class="k">Rugi terealisasi (sudah terjual)</span><span class="v loss">−0,00674 ETH</span></li>
                 <li><span class="k">Nilai posisi terbuka (live)</span><span class="v" id="plPosVal">—</span></li>
-                <li><span class="k">P/L posisi terbuka (live)</span><span class="v" id="plUnreal">—</span></li>
+                <li id="plUnrealRow"><span class="k">P/L posisi terbuka (live)</span><span class="v" id="plUnreal">—</span></li>
                 <li><span class="k">Total nilai wallet GIWA (live)</span><span class="v" id="plTotal">—</span></li>
               </ul>
             </div>
-            <div class="panel">
+            <div class="panel" id="plNotePanel">
               <h3>Catatan P/L</h3>
               <p style="margin:0; font-size:14.5px;">Kerugian terbesar datang dari SOLANA. Ronde 1 kena stop-loss dengan realisasi −27% (−0,00054 ETH). Ronde 2 — gabungan bot + beli manual, modal 0,012 ETH — kena stop-loss lagi pada 26 Nov pukul 11:13 WIB: seluruh 2.580.059,34 SOLANA terjual senilai ±0,005805 ETH, realisasi sekitar −52% (−0,00620 ETH). SL adalah pemicu yang dicek tiap 15 menit, bukan jaminan harga jual. Posisi lain masih terbuka, jadi angka akhirnya belum final.</p>
             </div>
@@ -657,7 +695,7 @@
 
         <section aria-labelledby="hist-title">
           <h2 id="hist-title">Riwayat Transaksi</h2>
-          <p class="sec-sub">Semua transaksi yang sudah terverifikasi on-chain, dari yang paling awal — termasuk beli/jual manual yang melibatkan wallet bot.</p>
+          <p class="sec-sub" id="histSub">Semua transaksi yang sudah terverifikasi on-chain, dari yang paling awal — termasuk beli/jual manual yang melibatkan wallet bot.</p>
           <p class="sec-sub" id="histNote" style="margin-top:-8px; font-size:13px;">Riwayat terverifikasi di bawah ini sampai 26 Nov · 11:13 WIB. Transaksi yang lebih baru ditambahkan otomatis dari data on-chain (event Transfer token di wallet bot) setiap refresh live berhasil.</p>
           <ul class="history" id="histList">
             <li>
@@ -776,6 +814,14 @@
                 <div class="h-tx">tx 0xec617210e29cc6c5235ea569ab243c05202ed3957cbd8967fd535ee25aa04df9</div>
               </div>
               <span class="h-time">26 Nov · 11:13</span>
+            </li>
+          </ul>
+          <ul class="history" id="histListConn" hidden>
+            <li class="hist-empty">
+              <div class="h-body">
+                <div class="h-title">Riwayat dompet terhubung dimuat dari event Transfer on-chain</div>
+                <div class="h-detail">Sinkron berjalan tiap refresh — entri beli/jual token yang dipantau untuk dompet ini akan muncul di sini.</div>
+              </div>
             </li>
           </ul>
         </section>
@@ -918,6 +964,16 @@
         <div class="wc-list" id="walletOptionList"></div>
         <div class="wc-feedback" id="walletModalFeedback" role="status"></div>
         <button class="btn btn-primary btn-block wc-retry" id="wcRetryBtn" type="button" hidden>Coba lagi muat WalletConnect</button>
+        <div class="wc-qr" id="wcQrPanel" hidden>
+          <button class="wc-back" id="wcQrBack" type="button">← Pilihan wallet lain</button>
+          <p class="wc-qr-title">Pindai dengan aplikasi wallet</p>
+          <div class="wc-qr-box" id="wcQrBox"><span class="wc-qr-wait">Menyiapkan kode QR…</span></div>
+          <p class="wc-qr-status" id="wcQrStatus" role="status">Menghubungi WalletConnect…</p>
+          <a class="btn btn-primary btn-block" id="wcDeepLink" href="#" hidden>Buka di aplikasi wallet (HP ini)</a>
+          <button class="btn btn-block" id="wcShowWallets" type="button" hidden>Lihat semua wallet</button>
+          <div class="wc-wlist" id="wcWalletLinks" hidden></div>
+          <button class="btn btn-block" id="wcQrRetry" type="button" hidden>Coba lagi</button>
+        </div>
         <div class="wc-fallback" id="walletFallback" hidden>
           <p class="wc-fb-title">Tidak ada wallet terdeteksi di browser ini?</p>
           <ol class="wc-steps">
@@ -972,6 +1028,92 @@
         function costOf(t) { return t.cost || COST; }
         var state = { live: false, ethBal: 0.13745744, block: null };
 
+        /* ================= Saklar tampilan: Dompet Terhubung vs Dompet Bot =================
+           Semua data dashboard (saldo, posisi, grafik, P/L, riwayat) dibaca dari
+           alamat yang SEDANG DITAMPILKAN (viewAddr): default-nya dompet yang
+           terhubung, bukan lagi selalu dompet bot. Tiap tampilan punya dataset
+           sendiri yang disimpan/dimuat saat saklar diganti atau akun berganti,
+           jadi angka satu dompet tidak pernah tercampur ke dompet lain. Field
+           kurva token (realEth, prog, graduated) bersifat per-token — bukan
+           per-dompet — jadi tetap dibagi ke dua tampilan. */
+        var viewMode = "connected"; /* "connected" | "bot" */
+        var botEthBal = 0.13745744;
+        var datasets = {};
+        function viewAddr() { return viewMode === "bot" ? WALLET : (account || WALLET); }
+        function viewKey() { return viewMode === "bot" ? "bot" : ("conn:" + (account ? account.toLowerCase() : "none")); }
+        function snapshotFields() {
+          return TOKENS.map(function (t) {
+            return { amt: t.amt, val: t.val, pnlPct: t.pnlPct, valNote: t.valNote, isNew: t.isNew };
+          });
+        }
+        function captureDataset() {
+          datasets[viewKey()] = { ethBal: state.ethBal, block: state.block, live: state.live, fields: snapshotFields() };
+          if (viewMode === "bot") botEthBal = state.ethBal;
+        }
+        function applyDataset(key) {
+          var d = datasets[key];
+          if (!d) return false;
+          state.ethBal = d.ethBal; state.block = d.block; state.live = d.live;
+          d.fields.forEach(function (f, i) {
+            var t = TOKENS[i]; if (!t) return;
+            t.amt = f.amt; t.val = f.val; t.pnlPct = f.pnlPct; t.valNote = f.valNote; t.isNew = f.isNew;
+          });
+          return true;
+        }
+        function blankConnDataset() {
+          return {
+            ethBal: 0, block: null, live: false,
+            fields: TOKENS.map(function () { return { amt: 0, val: 0, pnlPct: null, valNote: "menunggu data live…", isNew: false }; })
+          };
+        }
+        datasets.bot = { ethBal: state.ethBal, block: null, live: false, fields: snapshotFields() };
+
+        var POS_SUB_BOT = "Harga beli dihitung dari transaksi pembelian masing-masing token. Target jual (TP) +10% dan batas rugi (SL) −10% dihitung dari modal tiap posisi. AF adalah holding manual yang sudah graduasi — tidak di-TP/SL bot.";
+        var POS_SUB_CONN = "Saldo token dompet terhubung di GIWA Sepolia dengan nilai jual live (quoteSell). Dompet ini tidak memakai modal, TP, atau SL bot — yang tampil murni saldo dan nilai jual saat ini.";
+        var CHART_SUB_BOT = "Nilai jual sekarang (quoteSell) dibanding modal tiap posisi, dalam ETH. Garis putus-putus di tiap batang adalah modal posisi itu (0,002 ETH untuk posisi bot, 0,012 ETH untuk SOLANA, 0,1 ETH untuk AF).";
+        var CHART_SUB_CONN = "Nilai jual sekarang (quoteSell) tiap token yang dipegang dompet terhubung, dalam ETH. Tidak ada garis modal di grafik ini — modal & TP/SL hanya berlaku untuk dompet bot.";
+        var HIST_SUB_BOT = "Semua transaksi yang sudah terverifikasi on-chain, dari yang paling awal — termasuk beli/jual manual yang melibatkan wallet bot.";
+        var HIST_SUB_CONN = "Transfer token yang dipantau (masuk = terima, keluar = kirim) untuk dompet terhubung, disinkronkan dari event Transfer on-chain.";
+        function shortAddr(a) { return a ? a.slice(0, 6) + "…" + a.slice(-4) : "—"; }
+        function updateViewUI() {
+          var conn = viewMode === "connected";
+          document.getElementById("viewConnBtn").setAttribute("aria-pressed", conn ? "true" : "false");
+          document.getElementById("viewBotBtn").setAttribute("aria-pressed", conn ? "false" : "true");
+          document.getElementById("viewNote").innerHTML = conn
+            ? "Menampilkan <b>Dompet Terhubung</b> · " + esc(shortAddr(account)) + " — saldo &amp; posisi dompet ini dengan nilai jual live. Modal, TP/SL, dan aturan bot <b>tidak berlaku</b> untuk dompet ini."
+            : "Menampilkan <b>Dompet Bot</b> · " + esc(shortAddr(WALLET)) + " — monitor posisi bot lengkap dengan modal, TP/SL, dan riwayat bot.";
+          document.getElementById("statCardReserve").hidden = conn;
+          document.getElementById("statCardBuys").hidden = conn;
+          document.getElementById("thPrice").textContent = conn ? "Harga Jual Live" : "Harga Beli";
+          document.getElementById("thVal").textContent = conn ? "Nilai Jual Live" : "Nilai Terakhir";
+          document.getElementById("posSub").textContent = conn ? POS_SUB_CONN : POS_SUB_BOT;
+          document.getElementById("chartValueTitle").textContent = conn ? "Nilai Jual Posisi (Live)" : "Nilai Posisi vs Modal";
+          document.getElementById("chartValueSub").textContent = conn ? CHART_SUB_CONN : CHART_SUB_BOT;
+          document.getElementById("chartValueLegend").hidden = conn;
+          Array.prototype.forEach.call(document.querySelectorAll(".pl-bot-only"), function (el) { el.hidden = conn; });
+          document.getElementById("plUnrealRow").hidden = conn;
+          document.getElementById("plNotePanel").hidden = conn;
+          document.getElementById("histList").hidden = conn;
+          document.getElementById("histListConn").hidden = !conn;
+          document.getElementById("histSub").textContent = conn ? HIST_SUB_CONN : HIST_SUB_BOT;
+          document.getElementById("histNote").textContent = conn
+            ? "Riwayat dompet terhubung dimuat dari event Transfer token on-chain dompet itu — sinkron berjalan tiap refresh live."
+            : "Riwayat terverifikasi di bawah ini sampai 26 Nov · 11:13 WIB. Transaksi yang lebih baru ditambahkan otomatis dari data on-chain (event Transfer token di wallet bot) setiap refresh live berhasil.";
+        }
+        function setViewMode(mode) {
+          if (mode !== "connected" && mode !== "bot") return;
+          if (mode === viewMode) { updateViewUI(); return; }
+          captureDataset();
+          viewMode = mode;
+          var key = viewKey();
+          if (!datasets[key]) datasets[key] = blankConnDataset();
+          applyDataset(key);
+          updateViewUI();
+          renderAll();
+          refreshLive();
+          refreshHistory();
+        }
+
         /* ================= Util format ================= */
         function fmtID(n, dp) {
           return n.toLocaleString("id-ID", { minimumFractionDigits: dp, maximumFractionDigits: dp });
@@ -1003,7 +1145,39 @@
           if (t.isNew && !state.live) return { cls: "pill-new", txt: "BARU MASUK" };
           return { cls: "pill-hold", txt: "HOLD" };
         }
+        function renderTableConnected() {
+          var html = "";
+          TOKENS.forEach(function (t) {
+            if (t.amt <= 0) return;
+            var per1m = t.val / t.amt * 1e6;
+            var perTok = t.val / t.amt;
+            var curve = "";
+            if (t.realEth !== null && t.realEth !== undefined) {
+              curve = '<span class="curve-info">Kurva: ' + fmtID(t.realEth, 4) + " ETH terkumpul" +
+                (t.prog !== null && t.prog !== undefined ? " · " + fmtID(t.prog, 1) + "% ke graduasi" : "") + "</span>";
+            }
+            var pills = t.graduated
+              ? '<span class="pill pill-grad">SUDAH GRADUASI</span>'
+              : '<span class="pill pill-hold">DIPEGANG</span>';
+            html += "<tr>" +
+              '<td class="cell-tok"><div class="tok"><span class="tok-badge">' + esc(t.sym.slice(0, 2)) + "</span><span>" +
+              '<span class="tok-name">' + esc(t.sym) + "</span><br />" +
+              '<span class="tok-full">' + esc(t.name) + "</span><br />" +
+              '<span class="addr">' + esc(t.addr) + "</span></span></div></td>" +
+              '<td class="r" data-label="Jumlah"><span class="amt">' + fmtAmt(t.amt) + "</span></td>" +
+              '<td class="r" data-label="Harga jual live"><span class="price-main">' + fmtID(per1m, 6) + ' ETH</span><br /><span class="price-sub">per 1 jt token · ' + fmtID(perTok, 12) + " /token</span></td>" +
+              '<td class="r" data-label="Modal"><span class="num">—</span></td>' +
+              '<td class="r" data-label="Nilai jual live"><span class="num">' + fmtEth6(t.val) + ' ETH</span><br /><span class="price-sub">nilai jual live (quoteSell)</span></td>' +
+              '<td data-label="Status">' + pills + '<br /><span class="curve-info">Saldo dompet terhubung — tanpa modal / TP / SL bot</span>' + curve + "</td>" +
+              "</tr>";
+          });
+          if (!html) {
+            html = '<tr><td colspan="6"><span class="price-sub">Dompet terhubung tidak memegang token yang dipantau (PMSMS, SOLANA, FLPY, RKCAT, JAS, CIP, PAIJO, AF) di GIWA Sepolia — atau data live-nya belum masuk.</span></td></tr>';
+          }
+          document.getElementById("posBody").innerHTML = html;
+        }
         function renderTable() {
+          if (viewMode === "connected") { renderTableConnected(); return; }
           var html = "";
           TOKENS.forEach(function (t) {
             var st = statusOf(t);
@@ -1037,7 +1211,43 @@
         /* ================= Grafik (SVG, digambar dari TOKENS) ================= */
         function niceCeil(x, step) { return Math.ceil(x / step) * step; }
 
+        function renderValueChartConnected() {
+          var el = document.getElementById("chartValue");
+          var held = TOKENS.filter(function (t) { return t.amt > 0; });
+          if (!held.length) {
+            el.innerHTML = '<p class="c-sub">Dompet terhubung belum memegang token yang dipantau — atau data live-nya belum masuk.</p>';
+            return;
+          }
+          var W = 520, H = 300, mL = 46, mR = 8, mT = 24, mB = 30;
+          var pw = W - mL - mR, ph = H - mT - mB;
+          var maxV = 0;
+          held.forEach(function (t) { maxV = Math.max(maxV, t.val); });
+          var yMax = Math.max(0.0025, niceCeil(maxV * 1.15, 0.0005));
+          var y = function (v) { return mT + ph - (v / yMax) * ph; };
+          var s = '<svg viewBox="0 0 ' + W + " " + H + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">';
+          var rawStep = yMax / 5;
+          var mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+          var norm = rawStep / mag;
+          var step = mag * (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10);
+          for (var gv = 0; gv <= yMax + 1e-9; gv += step) {
+            var gy = y(gv);
+            s += '<line class="grid" x1="' + mL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - mR) + '" y2="' + gy.toFixed(1) + '"/>';
+            s += '<text class="ax" x="' + (mL - 5) + '" y="' + (gy + 3.5).toFixed(1) + '" text-anchor="end">' + fmtID(gv, 4) + "</text>";
+          }
+          var slot = pw / held.length, bw = Math.min(38, slot * 0.58);
+          held.forEach(function (t, i) {
+            var cx = mL + slot * i + slot / 2;
+            var bx = cx - bw / 2, by = y(t.val);
+            s += '<rect x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + (y(0) - by).toFixed(1) + '" rx="3" fill="var(--brand)"/>';
+            s += '<text class="vl" x="' + cx.toFixed(1) + '" y="' + (by - 5).toFixed(1) + '" text-anchor="middle">' + fmtID(t.val, 5) + "</text>";
+            s += '<text class="tk" x="' + cx.toFixed(1) + '" y="' + (H - mB + 16) + '" text-anchor="middle">' + esc(t.sym) + "</text>";
+          });
+          s += '<line class="axis" x1="' + mL + '" y1="' + y(0).toFixed(1) + '" x2="' + (W - mR) + '" y2="' + y(0).toFixed(1) + '"/>';
+          s += "</svg>";
+          el.innerHTML = s;
+        }
         function renderValueChart() {
+          if (viewMode === "connected") { renderValueChartConnected(); return; }
           var W = 520, H = 300, mL = 46, mR = 8, mT = 24, mB = 30;
           var pw = W - mL - mR, ph = H - mT - mB;
           var maxV = 0;
@@ -1112,10 +1322,10 @@
           var posVal = 0, modalOpen = 0;
           open.forEach(function (t) { posVal += t.val; modalOpen += costOf(t); });
           document.getElementById("statBalance").textContent = fmtEth8(state.ethBal);
-          document.getElementById("wBalance").textContent = fmtEth8(state.ethBal);
-          document.getElementById("walletBalRow").textContent = fmtEth8(state.ethBal) + " ETH";
+          /* Widget + baris wallet di Aturan selalu soal dompet BOT — jangan tertukar tampilan. */
+          document.getElementById("wBalance").textContent = fmtEth8(botEthBal);
+          document.getElementById("walletBalRow").textContent = fmtEth8(botEthBal) + " ETH";
           document.getElementById("statPosCount").textContent = open.length;
-          document.getElementById("statPosNote").textContent = "Total modal masuk: " + fmtID(modalOpen, 3) + " ETH";
           var buys = Math.max(0, Math.floor((state.ethBal - RESERVE) / COST));
           document.getElementById("statBuys").textContent = state.live ? String(buys) : "±63";
           var unreal = posVal - modalOpen;
@@ -1124,8 +1334,16 @@
           plEl.textContent = (unreal >= 0 ? "+" : "−") + fmtEth6(Math.abs(unreal)) + " ETH (" + fmtPct(modalOpen > 0 ? unreal / modalOpen * 100 : 0) + ")";
           plEl.className = "v " + (unreal >= 0 ? "gain" : "loss");
           document.getElementById("plTotal").textContent = fmtEth6(state.ethBal + posVal) + " ETH";
-          if (state.live) {
-            document.getElementById("statBalanceNote").textContent = "Saldo live dari RPC GIWA Sepolia" + (state.block ? " · blok " + blockFmt(state.block) : "");
+          if (viewMode === "connected") {
+            document.getElementById("statPosNote").textContent = "Total nilai jual live: " + fmtEth6(posVal) + " ETH";
+            document.getElementById("statBalanceNote").textContent = state.live
+              ? "Saldo live dompet terhubung · RPC GIWA Sepolia" + (state.block ? " · blok " + blockFmt(state.block) : "")
+              : "Saldo dompet terhubung — menunggu data live…";
+          } else {
+            document.getElementById("statPosNote").textContent = "Total modal masuk: " + fmtID(modalOpen, 3) + " ETH";
+            document.getElementById("statBalanceNote").textContent = state.live
+              ? "Saldo live dari RPC GIWA Sepolia" + (state.block ? " · blok " + blockFmt(state.block) : "")
+              : "Setelah bridge +0,10 ETH dari Ethereum Sepolia";
           }
         }
 
@@ -1204,12 +1422,13 @@
           if (refreshBusy) return Promise.resolve();
           refreshBusy = true;
           setRefreshBtn(true);
+          var VA = viewAddr();
           var calls = [
-            { method: "eth_getBalance", params: [WALLET, "latest"] },
+            { method: "eth_getBalance", params: [VA, "latest"] },
             { method: "eth_blockNumber", params: [] }
           ];
           TOKENS.forEach(function (t) {
-            calls.push({ method: "eth_call", params: [{ to: t.addr, data: SEL.balanceOf + padAddr(WALLET) }, "latest"] });
+            calls.push({ method: "eth_call", params: [{ to: t.addr, data: SEL.balanceOf + padAddr(VA) }, "latest"] });
             calls.push({ method: "eth_call", params: [{ to: LP, data: SEL.curves + padAddr(t.addr) }, "latest"] });
             calls.push({ method: "eth_call", params: [{ to: LP, data: SEL.ethToGrad + padAddr(t.addr) }, "latest"] });
           });
@@ -1253,12 +1472,15 @@
               });
               state.live = true;
               renderAll();
+              captureDataset();
               refreshHistory();
               setStatus("live", "<b>LIVE</b> — data on-chain GIWA Sepolia · diperbarui " + esc(nowWIB()) + " · blok " + esc(blockFmt(block)) + " · auto-refresh tiap 60 detik.");
               document.getElementById("wTime").textContent = "Live · " + nowWIB();
             });
           }).catch(function (err) {
-            if (!state.live) {
+            if (viewMode === "connected" && !state.live) {
+              setStatus("fail", "<b>Data dompet terhubung belum termuat</b> — koneksi live ke RPC GIWA Sepolia gagal (" + esc(err.message) + "). Saldo &amp; posisi dompet ini muncul begitu RPC terjangkau (dicoba lagi otomatis tiap 60 detik), atau lihat dompet bot lewat saklar tampilan di atas.");
+            } else if (!state.live) {
               setStatus("fail", "<b>Data snapshot</b> — koneksi live ke RPC GIWA Sepolia gagal (" + esc(err.message) + "). Yang tampil adalah data terakhir terverifikasi on-chain per <b>Kamis, 26 November 2026 · 09:13 WIB</b>. Mencoba lagi otomatis tiap 60 detik.");
             } else {
               setStatus("fail", "<b>Data terakhir</b> — refresh live gagal (" + esc(err.message) + "), angka yang tampil adalah hasil live terakhir yang berhasil. Mencoba lagi otomatis tiap 60 detik.");
@@ -1275,10 +1497,13 @@
         })();
 
         /* ================= Riwayat live: sinkron dari event Transfer =================
-           Daftar statis di atas terverifikasi sampai blok 42321327 (26 Nov · 11:13 WIB).
-           Mulai blok HIST_FROM, semua Transfer token (8 kontrak) yang melibatkan wallet
-           bot ditarik via eth_getLogs tiap refresh — beli/jual bot maupun manual sama-sama
-           tercatat. Tx yang sudah ada di daftar statis dilewati (dedupe per hash). */
+           Daftar statis di atas terverifikasi sampai blok 42321327 (26 Nov · 11:13 WIB)
+           dan hanya milik WALLET BOT — tampil di tampilan Dompet Bot. Mulai blok
+           HIST_FROM, semua Transfer token (8 kontrak) yang melibatkan alamat yang
+           sedang ditampilkan (viewAddr) ditarik via eth_getLogs tiap refresh —
+           beli/jual bot maupun manual sama-sama tercatat. Tiap tampilan punya
+           status sinkron + daftar sendiri; tx yang sudah ada di daftar statis
+           dilewati (dedupe per hash, hanya berlaku untuk tampilan bot). */
         var TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
         var HIST_FROM = 42313290;
         var KNOWN_TX = {};
@@ -1297,7 +1522,13 @@
           "0x3c3d65a11623f0db3b13d6383b88c7e3d63eeec62ea2da4becf7d02e9de04ce4",
           "0xec617210e29cc6c5235ea569ab243c05202ed3957cbd8967fd535ee25aa04df9"
         ].forEach(function (h) { KNOWN_TX[h] = true; });
-        var histState = { nextFrom: HIST_FROM, seen: {}, busy: false };
+        var histStates = {
+          bot: { nextFrom: HIST_FROM, seen: {}, busy: false },
+          conn: { nextFrom: HIST_FROM, seen: {}, busy: false }
+        };
+        function curHistState() { return viewMode === "bot" ? histStates.bot : histStates.conn; }
+        function histLabel() { return viewMode === "bot" ? "wallet bot" : "dompet terhubung"; }
+        function histListEl() { return document.getElementById(viewMode === "bot" ? "histList" : "histListConn"); }
 
         function fmtHistTime(tsSec) {
           var months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
@@ -1313,15 +1544,20 @@
         function updateHistNote(ok, block) {
           var el = document.getElementById("histNote");
           if (!el) return;
+          var label = histLabel();
           if (ok) {
-            el.textContent = "Sinkron riwayat LIVE aktif — transfer token di wallet bot dicek sampai blok " + blockFmt(block) + " · terakhir dicek " + nowWIB() + ". Entri bertanda “live” di bawah ditambahkan otomatis dari data on-chain.";
-          } else {
+            el.textContent = "Sinkron riwayat LIVE aktif — transfer token di " + label + " dicek sampai blok " + blockFmt(block) + " · terakhir dicek " + nowWIB() + ". Entri bertanda “live” di bawah ditambahkan otomatis dari data on-chain.";
+          } else if (viewMode === "bot") {
             el.textContent = "Sinkron live riwayat belum berhasil (RPC tidak terjangkau) — yang tampil adalah riwayat terverifikasi sampai 26 Nov · 11:13 WIB. Sinkron dicoba lagi otomatis tiap refresh.";
+          } else {
+            el.textContent = "Sinkron live riwayat dompet terhubung belum berhasil (RPC tidak terjangkau). Sinkron dicoba lagi otomatis tiap refresh.";
           }
         }
-        function appendHistEntries(entries) {
-          var ul = document.getElementById("histList");
+        function appendHistEntries(entries, listEl, label) {
+          var ul = listEl || histListEl();
           if (!ul || !entries.length) return;
+          var empty = ul.querySelector(".hist-empty");
+          if (empty) empty.remove();
           var html = "";
           entries.forEach(function (e) {
             var isIn = e.dirIn;
@@ -1329,7 +1565,7 @@
               '<span class="h-tag ' + (isIn ? "h-buy\">BELI" : "h-sell\">JUAL") + "</span>" +
               '<div class="h-body">' +
               '<div class="h-title">' + esc(e.t.sym) + (isIn ? " — terima " : " — kirim ") + fmtAmt(e.amount) + " " + esc(e.t.sym) + " (live)</div>" +
-              '<div class="h-detail">Terdeteksi dari event Transfer on-chain di wallet bot · blok ' + Number(e.block).toLocaleString("id-ID") + "</div>" +
+              '<div class="h-detail">Terdeteksi dari event Transfer on-chain di ' + esc(label || histLabel()) + " · blok " + Number(e.block).toLocaleString("id-ID") + "</div>" +
               '<div class="h-tx">tx ' + esc(e.tx) + "</div>" +
               "</div>" +
               '<span class="h-time">' + esc(e.timeStr || "live") + "</span>" +
@@ -1337,11 +1573,11 @@
           });
           ul.insertAdjacentHTML("beforeend", html);
         }
-        function syncHistChunk(fromB, toB) {
+        function syncHistChunk(fromB, toB, addr, st, listEl, label, useKnown) {
           var calls = [];
           TOKENS.forEach(function (t) {
-            calls.push({ method: "eth_getLogs", params: [{ address: t.addr, fromBlock: "0x" + fromB.toString(16), toBlock: "0x" + toB.toString(16), topics: [TRANSFER_TOPIC, null, "0x" + padAddr(WALLET)] }] });
-            calls.push({ method: "eth_getLogs", params: [{ address: t.addr, fromBlock: "0x" + fromB.toString(16), toBlock: "0x" + toB.toString(16), topics: [TRANSFER_TOPIC, "0x" + padAddr(WALLET)] }] });
+            calls.push({ method: "eth_getLogs", params: [{ address: t.addr, fromBlock: "0x" + fromB.toString(16), toBlock: "0x" + toB.toString(16), topics: [TRANSFER_TOPIC, null, "0x" + padAddr(addr)] }] });
+            calls.push({ method: "eth_getLogs", params: [{ address: t.addr, fromBlock: "0x" + fromB.toString(16), toBlock: "0x" + toB.toString(16), topics: [TRANSFER_TOPIC, "0x" + padAddr(addr)] }] });
           });
           return rpcBatch(calls).then(function (results) {
             var logs = [];
@@ -1354,52 +1590,58 @@
             logs.forEach(function (lg) {
               if (!lg.transactionHash || !lg.address) return;
               var key = lg.transactionHash.toLowerCase() + ":" + lg.logIndex;
-              if (histState.seen[key] || KNOWN_TX[lg.transactionHash.toLowerCase()]) return;
+              if (st.seen[key] || (useKnown && KNOWN_TX[lg.transactionHash.toLowerCase()])) return;
               var t = tokenByAddr(lg.address);
               if (!t || !lg.topics || lg.topics.length < 3) return;
-              var wTopic = "0x" + padAddr(WALLET);
+              var wTopic = "0x" + padAddr(addr);
               var toW = String(lg.topics[2]).toLowerCase() === wTopic;
               var fromW = String(lg.topics[1]).toLowerCase() === wTopic;
               if (toW === fromW) return;
-              histState.seen[key] = true;
+              st.seen[key] = true;
               fresh.push({ t: t, dirIn: toW, amount: weiToEth(wordAt(lg.data, 0)), block: parseInt(lg.blockNumber, 16), tx: lg.transactionHash, timeStr: "" });
             });
             if (!fresh.length) return;
             var blocks = [];
             fresh.forEach(function (e) { if (blocks.indexOf(e.block) === -1) blocks.push(e.block); });
-            if (blocks.length > 12) { appendHistEntries(fresh); return; }
+            if (blocks.length > 12) { appendHistEntries(fresh, listEl, label); return; }
             var bcalls = blocks.map(function (b) { return { method: "eth_getBlockByNumber", params: ["0x" + b.toString(16), false] }; });
             return rpcBatch(bcalls).then(function (bres) {
               var tsByBlock = {};
               bres.forEach(function (blk, i) { if (blk && blk.timestamp) tsByBlock[blocks[i]] = parseInt(blk.timestamp, 16); });
               fresh.forEach(function (e) { if (tsByBlock[e.block]) e.timeStr = fmtHistTime(tsByBlock[e.block]); });
-              appendHistEntries(fresh);
-            }).catch(function () { appendHistEntries(fresh); });
+              appendHistEntries(fresh, listEl, label);
+            }).catch(function () { appendHistEntries(fresh, listEl, label); });
           });
         }
         function refreshHistory() {
-          if (histState.busy) return;
-          histState.busy = true;
+          var st = curHistState();
+          if (st.busy) return;
+          if (viewMode === "connected" && !account) return;
+          var addr = viewAddr();
+          var listEl = histListEl();
+          var label = histLabel();
+          var useKnown = viewMode === "bot";
+          st.busy = true;
           rpcSingle("eth_blockNumber", []).then(function (bnHex) {
             var latest = parseInt(bnHex, 16);
-            var from = histState.nextFrom;
-            if (from > latest) { histState.busy = false; updateHistNote(true, latest); return; }
+            var from = st.nextFrom;
+            if (from > latest) { st.busy = false; updateHistNote(true, latest); return; }
             var chain = Promise.resolve();
             for (var s = from; s <= latest; s += 4000) {
               (function (cFrom, cTo) {
-                chain = chain.then(function () { return syncHistChunk(cFrom, cTo); });
+                chain = chain.then(function () { return syncHistChunk(cFrom, cTo, addr, st, listEl, label, useKnown); });
               })(s, Math.min(s + 3999, latest));
             }
             chain.then(function () {
-              histState.nextFrom = latest + 1;
-              histState.busy = false;
+              st.nextFrom = latest + 1;
+              st.busy = false;
               updateHistNote(true, latest);
             }).catch(function () {
-              histState.busy = false;
+              st.busy = false;
               updateHistNote(false);
             });
           }).catch(function () {
-            histState.busy = false;
+            st.busy = false;
             updateHistNote(false);
           });
         }
@@ -1449,7 +1691,12 @@
         var activeProvider = null;
         var wcProvider = null;
         var connVia = "";
-        function getProvider() { return activeProvider || (hasEth() ? window.ethereum : null); }
+        function getProvider() {
+          if (activeProvider) return activeProvider;
+          if (hasEth()) return window.ethereum;
+          var inj = detectInjectedWallets();
+          return inj.length ? inj[0].provider : null;
+        }
         function chainName(id) {
           if (id === GIWA_CHAIN) return "GIWA Sepolia (91342)";
           if (id === SEPOLIA_CHAIN) return "Ethereum Sepolia (11155111)";
@@ -1485,10 +1732,18 @@
         function fmtTok(wei) { return fmtID(weiToEth(wei), 4); }
 
         /* ================= Gerbang + modal pilihan wallet =================
-           Pilihan koneksi: (1) wallet yang mengumumkan diri via EIP-6963 (MetaMask,
-           Rabby, Coinbase Wallet, dll.), (2) window.ethereum lama bila ada,
-           (3) WalletConnect (QR / deep-link) via @walletconnect/ethereum-provider
-           UMD yang dimuat malas dari beberapa CDN cadangan (lihat pemuat di bawah).
+           Pilihan koneksi: (1) wallet bawaan browser yang terdeteksi EKSPLISIT dari
+           objek injeksi global — window.okxwallet (OKX), window.coinbaseWalletExtension
+           (Coinbase), window.trustwallet (Trust), window.ethereum beserta array
+           .providers-nya dan flag-nya (isMetaMask / isOkxWallet / isCoinbaseWallet /
+           isTrust / isRabby / isBraveWallet), window.BinanceChain — penting untuk
+           browser dalam aplikasi wallet seperti OKX, yang provider-nya tidak selalu
+           mengumumkan diri via EIP-6963; tombolnya menghubungkan LANGSUNG lewat
+           eth_requestAccounts tanpa WalletConnect, (2) wallet yang mengumumkan diri
+           via EIP-6963 (MetaMask, Rabby, Coinbase Wallet, dll.),
+           (3) WalletConnect (QR yang digambar sendiri di halaman ini / deep-link)
+           via @walletconnect/ethereum-provider UMD yang dimuat malas dari beberapa
+           CDN cadangan (lihat pemuat di bawah).
            WC_PROJECT_ID di bawah adalah Project ID
            contoh publik dari dokumentasi WalletConnect — terverifikasi aktif lewat
            RPC proxy WalletConnect; bisa diganti Project ID sendiri dari Reown Cloud
@@ -1510,6 +1765,66 @@
           try { window.dispatchEvent(new Event("eip6963:requestProvider")); } catch (e) {}
         }
 
+        /* ---- Deteksi eksplisit wallet bawaan browser (provider injeksi) ----
+           EIP-6963 saja tidak cukup: browser dalam aplikasi wallet (OKX, Trust,
+           Coinbase) menyuntikkan provider-nya sebagai global sendiri dan tidak
+           selalu mengumumkan diri. Fungsi ini memeriksa global-global itu satu
+           per satu dan memberi nama wallet yang benar, supaya pengguna OKX
+           melihat tombol "OKX Wallet" yang connect langsung — bukan disuruh
+           memutar-mutar WalletConnect. Hasilnya dihitung ulang setiap render,
+           jadi provider yang baru disuntikkan setelah halaman dimuat tetap
+           tertangkap saat modal dibuka lagi. */
+        function isProviderLike(p) {
+          return !!p && (typeof p.request === "function" || typeof p.send === "function" || typeof p.sendAsync === "function");
+        }
+        function injectedWalletName(p, fallback) {
+          if (!p) return fallback;
+          if (p.isOkxWallet || p.isOKExWallet) return "OKX Wallet";
+          if (p.isCoinbaseWallet) return "Coinbase Wallet";
+          if (p.isTrust || p.isTrustWallet) return "Trust Wallet";
+          if (p.isRabby) return "Rabby Wallet";
+          if (p.isBraveWallet) return "Brave Wallet";
+          if (p.isMetaMask) return "MetaMask";
+          return fallback;
+        }
+        var DIRECT_DESC = "Terdeteksi di browser ini — hubungkan langsung, tanpa WalletConnect";
+        function detectInjectedWallets() {
+          var out = [];
+          var seen = [];
+          function add(provider, name) {
+            if (!isProviderLike(provider)) return;
+            if (seen.indexOf(provider) !== -1) return;
+            seen.push(provider);
+            out.push({ provider: provider, name: name });
+          }
+          function addCandidate(obj, name) {
+            if (!obj) return;
+            if (isProviderLike(obj)) { add(obj, name); return; }
+            if (obj.ethereum) add(obj.ethereum, name);
+          }
+          /* OKX — browser aplikasi OKX & ekstensi OKX menyuntikkan window.okxwallet */
+          addCandidate(window.okxwallet, "OKX Wallet");
+          /* Coinbase Wallet — ekstensinya menyuntikkan window.coinbaseWalletExtension */
+          addCandidate(window.coinbaseWalletExtension, "Coinbase Wallet");
+          /* Trust Wallet — menyuntikkan window.trustwallet */
+          addCandidate(window.trustwallet || window.trustWallet, "Trust Wallet");
+          /* window.ethereum: beberapa wallet bisa berbagi lewat array .providers —
+             bila array itu ada, isinya yang dienumerasi (window.ethereum-nya sendiri
+             biasanya salah satu isinya / shim perute, bukan wallet terpisah). */
+          var eth = window.ethereum;
+          var hasProvidersArr = !!(eth && eth.providers && eth.providers.length);
+          if (hasProvidersArr) {
+            for (var i = 0; i < eth.providers.length; i++) {
+              add(eth.providers[i], injectedWalletName(eth.providers[i], "Wallet Browser"));
+            }
+          }
+          if (eth && !hasProvidersArr) add(eth, injectedWalletName(eth, "Wallet Browser"));
+          /* Binance Wallet — menyuntikkan window.BinanceChain */
+          addCandidate(window.BinanceChain, "Binance Wallet");
+          return out;
+        }
+        var injectedWallets = [];
+
         var modalEl = document.getElementById("walletModal");
         var modalFeedback = document.getElementById("walletModalFeedback");
         function setModalFeedback(msg, cls) {
@@ -1524,6 +1839,7 @@
         }
         function openWalletModal() {
           requestWalletAnnouncements();
+          hideWcQrPanel();
           renderWalletOptions();
           setModalFeedback("");
           hideWcRetryBtn();
@@ -1531,10 +1847,13 @@
           document.body.style.overflow = "hidden";
           /* Muat library WalletConnect di latar sejak modal dibuka — diam-diam,
              tanpa pesan error — supaya saat tombol WalletConnect diklik,
-             library-nya kemungkinan besar sudah siap. */
+             library-nya kemungkinan besar sudah siap. Library QR dimuat juga
+             supaya kode QR WalletConnect bisa langsung digambar di panel. */
           if (!getWCProviderClass()) loadWalletConnectLibrary(null).catch(function () {});
+          if (!getQrLib()) loadQrLibrary().catch(function () {});
         }
         function closeWalletModal() {
+          clearWcQrWatchdog();
           modalEl.hidden = true;
           document.body.style.overflow = "";
         }
@@ -1546,31 +1865,42 @@
           var list = document.getElementById("walletOptionList");
           var html = "";
           var seenProviders = [];
+          /* 1) Wallet bawaan browser dari deteksi injeksi eksplisit — paling atas,
+                dengan nama aslinya (OKX Wallet, Trust Wallet, dst.) dan connect
+                langsung lewat eth_requestAccounts. */
+          injectedWallets = detectInjectedWallets();
+          injectedWallets.forEach(function (w, i) {
+            seenProviders.push(w.provider);
+            html += '<button class="wc-opt" type="button" data-wallet-injected="' + i + '">' +
+              walletBadge(w.name) +
+              '<span><span class="wc-name">' + esc(w.name) + '</span><span class="wc-desc">' + DIRECT_DESC + '</span></span></button>';
+          });
+          /* 2) Wallet EIP-6963 yang providernya belum muncul dari deteksi injeksi. */
           discoveredWallets.forEach(function (d, i) {
+            if (seenProviders.indexOf(d.provider) !== -1) return;
             seenProviders.push(d.provider);
             html += '<button class="wc-opt" type="button" data-wallet-idx="' + i + '">' +
               (d.info.icon ? '<img src="' + esc(d.info.icon) + '" alt="" />' : walletBadge(d.info.name)) +
               '<span><span class="wc-name">' + esc(d.info.name) + '</span><span class="wc-desc">Wallet terdeteksi di browser ini</span></span></button>';
           });
-          if (hasEth() && seenProviders.indexOf(window.ethereum) === -1) {
-            html += '<button class="wc-opt" type="button" data-wallet-legacy="1">' + walletBadge("MetaMask") +
-              '<span><span class="wc-name">Wallet Browser</span><span class="wc-desc">MetaMask / wallet ekstensi yang terpasang di browser ini</span></span></button>';
-          }
-          if (!discoveredWallets.length && !hasEth()) {
+          if (!seenProviders.length) {
             html += '<div class="wc-none">Tidak ada wallet ekstensi yang terdeteksi di browser ini. WalletConnect di bawah tetap bisa dipakai dari aplikasi wallet di HP.</div>';
           }
           html += '<button class="wc-opt" type="button" data-wallet-wc="1">' + walletBadge("WalletConnect") +
             '<span><span class="wc-name">WalletConnect</span><span class="wc-desc">Pindai QR atau deep-link — MetaMask, Trust Wallet, Rainbow, dan 300+ wallet lain</span></span></button>';
           list.innerHTML = html;
-          document.getElementById("walletFallback").hidden = !(!discoveredWallets.length && !hasEth());
+          document.getElementById("walletFallback").hidden = seenProviders.length > 0;
+          Array.prototype.forEach.call(list.querySelectorAll("[data-wallet-injected]"), function (btn) {
+            btn.addEventListener("click", function () {
+              var w = injectedWallets[Number(btn.getAttribute("data-wallet-injected"))];
+              if (w) connectWithProvider(w.provider, w.name);
+            });
+          });
           Array.prototype.forEach.call(list.querySelectorAll("[data-wallet-idx]"), function (btn) {
             btn.addEventListener("click", function () {
               var d = discoveredWallets[Number(btn.getAttribute("data-wallet-idx"))];
               if (d) connectWithProvider(d.provider, d.info.name);
             });
-          });
-          Array.prototype.forEach.call(list.querySelectorAll("[data-wallet-legacy]"), function (btn) {
-            btn.addEventListener("click", function () { connectWithProvider(window.ethereum, "Wallet Browser"); });
           });
           Array.prototype.forEach.call(list.querySelectorAll("[data-wallet-wc]"), function (btn) {
             btn.addEventListener("click", function () { connectViaWalletConnect(btn); });
@@ -1581,9 +1911,19 @@
           if (!prov || !prov.on || prov._dashListeners) return;
           prov._dashListeners = true;
           prov.on("accountsChanged", function (accs) {
-            account = accs && accs[0] ? accs[0] : null;
+            var newAcc = accs && accs[0] ? accs[0] : null;
+            if (newAcc && account && newAcc.toLowerCase() === account.toLowerCase()) return;
+            captureDataset(); /* simpan dataset akun lama di kuncinya sebelum berganti */
+            account = newAcc;
             if (!account) { lockDashboard("Wallet terputus dari aplikasi wallet. Hubungkan lagi untuk membuka dashboard."); return; }
+            /* Ganti dompet = muat ulang seluruh tampilan dari alamat baru. */
+            viewMode = "connected";
+            var key = viewKey();
+            if (!datasets[key]) datasets[key] = blankConnDataset();
+            applyDataset(key);
+            updateViewUI();
             updateWalletInfo(); refreshSwapBalHint();
+            if (dashboardUnlocked) { renderAll(); refreshLive(); refreshHistory(); }
           });
           prov.on("chainChanged", function (cid) {
             chainId = parseInt(cid, 16);
@@ -1701,29 +2041,177 @@
         function showWcRetryBtn() { var b = document.getElementById("wcRetryBtn"); if (b) b.hidden = false; }
         function hideWcRetryBtn() { var b = document.getElementById("wcRetryBtn"); if (b) b.hidden = true; }
 
+        /* ---- Panel QR WalletConnect milik halaman ini ----
+           Modal QR bawaan WalletConnect (showQrModal) membuka lembar "All Wallets"
+           yang daftar wallet-nya diambil dari registry online WalletConnect; di
+           jaringan/browser yang memblokir registry itu, lembarnya berputar tanpa
+           henti (kotak abu-abu loading) dan QR tidak pernah bisa dipakai. Karena
+           itu provider di-init dengan showQrModal: false — URI pairing diterima
+           lewat event "display_uri" dan kode QR-nya DIGAMBAR SENDIRI di panel
+           modal halaman ini, jadi QR adalah tampilan utama dan tidak bergantung
+           pada daftar remote apa pun. Tombol "Lihat semua wallet" membuka daftar
+           deep-link wallet populer yang dibuat lokal dari URI yang sama (instan,
+           tanpa unduhan). Pengaman waktu: kalau dalam ±10 detik koneksi belum
+           tuntas, panel menampilkan tombol "Coba lagi" — tidak ada loading
+           tanpa henti. */
+        var WC_QR_TIMEOUT_MS = 10000;
+        var wcUri = null;
+        var wcQrWatchdog = null;
+        var wcConnecting = false;
+
+        function setWcQrStatus(msg, isErr) {
+          var el = document.getElementById("wcQrStatus");
+          if (!el) return;
+          el.textContent = msg || "";
+          el.className = "wc-qr-status" + (isErr ? " err" : "");
+        }
+        function clearWcQrWatchdog() {
+          if (wcQrWatchdog) { clearTimeout(wcQrWatchdog); wcQrWatchdog = null; }
+        }
+        function startWcQrWatchdog() {
+          clearWcQrWatchdog();
+          wcQrWatchdog = setTimeout(function () {
+            wcQrWatchdog = null;
+            if (account) return; /* sudah terhubung — tidak perlu apa-apa */
+            var retry = document.getElementById("wcQrRetry");
+            if (retry) retry.hidden = false;
+            if (!wcUri) {
+              setWcQrStatus("Kode QR belum muncul setelah 10 detik — koneksi ke server WalletConnect mungkin terhalang di jaringan / browser ini. Tekan Coba lagi, atau hubungkan wallet bawaan browser (mis. OKX Wallet) bila terdeteksi.", true);
+            } else {
+              setWcQrStatus("Sudah pindai tapi belum terhubung? Tekan Coba lagi untuk membuat kode QR baru.", false);
+            }
+          }, WC_QR_TIMEOUT_MS);
+        }
+        function showWcQrPanel() {
+          document.getElementById("walletOptionList").hidden = true;
+          document.getElementById("walletFallback").hidden = true;
+          hideWcRetryBtn();
+          setModalFeedback("");
+          wcUri = null;
+          document.getElementById("wcQrBox").innerHTML = '<span class="wc-qr-wait">Menyiapkan kode QR…</span>';
+          document.getElementById("wcDeepLink").hidden = true;
+          document.getElementById("wcShowWallets").hidden = true;
+          var wl = document.getElementById("wcWalletLinks");
+          wl.hidden = true; wl.innerHTML = "";
+          document.getElementById("wcQrRetry").hidden = true;
+          setWcQrStatus("Menghubungi WalletConnect…");
+          document.getElementById("wcQrPanel").hidden = false;
+        }
+        function hideWcQrPanel() {
+          clearWcQrWatchdog();
+          var p = document.getElementById("wcQrPanel");
+          if (p) p.hidden = true;
+          var list = document.getElementById("walletOptionList");
+          if (list) list.hidden = false;
+        }
+        function buildWcWalletLinks(uri) {
+          var enc = encodeURIComponent(uri);
+          var wallets = [
+            { name: "MetaMask", href: "https://metamask.app.link/wc?uri=" + enc },
+            { name: "Trust Wallet", href: "https://link.trustwallet.com/wc?uri=" + enc },
+            { name: "Rainbow", href: "https://rnbwapp.com/wc?uri=" + enc }
+          ];
+          var html = "";
+          wallets.forEach(function (w) {
+            html += '<a class="wc-opt" href="' + esc(w.href) + '">' + walletBadge(w.name) +
+              '<span><span class="wc-name">' + esc(w.name) + '</span><span class="wc-desc">Buka koneksi ini di aplikasi ' + esc(w.name) + '</span></span></a>';
+          });
+          html += '<div class="wc-none">Wallet lain: pindai kode QR di atas dengan aplikasi wallet-mu — semua wallet yang mendukung WalletConnect bisa memakainya.</div>';
+          document.getElementById("wcWalletLinks").innerHTML = html;
+        }
+        function onWcDisplayUri(uri) {
+          if (!uri) return;
+          wcUri = uri;
+          renderWcQr(uri);
+          var dl = document.getElementById("wcDeepLink");
+          dl.href = uri;
+          dl.hidden = false;
+          document.getElementById("wcShowWallets").hidden = false;
+          buildWcWalletLinks(uri);
+          setWcQrStatus("Kode QR siap — pindai dengan aplikasi wallet di HP, lalu setujui koneksinya di sana. Di HP yang sama, pakai tombol “Buka di aplikasi wallet”.");
+        }
+        function renderWcQr(uri) {
+          var box = document.getElementById("wcQrBox");
+          loadQrLibrary().then(function (QrLib) {
+            try {
+              var qr = QrLib(0, "M");
+              qr.addData(uri);
+              qr.make();
+              var svg;
+              try { svg = qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true }); }
+              catch (e1) { svg = qr.createSvgTag(4, 4); }
+              box.innerHTML = svg;
+            } catch (e2) {
+              box.innerHTML = '<span class="wc-qr-wait">Kode QR tidak bisa digambar di browser ini — pakai tombol “Buka di aplikasi wallet” di bawah, atau buka dashboard ini dari browser bawaan aplikasi wallet.</span>';
+            }
+          }).catch(function () {
+            box.innerHTML = '<span class="wc-qr-wait">Library QR tidak termuat — pakai tombol “Buka di aplikasi wallet” di bawah, atau buka dashboard ini dari browser bawaan aplikasi wallet.</span>';
+          });
+        }
+        function attachWcUriListener(p) {
+          if (!p || !p.on || p._dashUriListener) return;
+          p._dashUriListener = true;
+          p.on("display_uri", function (uri) { onWcDisplayUri(uri); });
+        }
+
+        /* ---- Pemuat library QR (qrcode-generator) — pola yang sama dengan
+           pemuat WalletConnect: beberapa CDN cadangan dicoba berurutan dengan
+           timeout per sumber. Global yang dipasang library ini: window.qrcode. */
+        var QR_CDN_SOURCES = [
+          "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js",
+          "https://unpkg.com/qrcode-generator@1.4.4/qrcode.min.js",
+          "https://fastly.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"
+        ];
+        function getQrLib() { return (typeof window.qrcode === "function") ? window.qrcode : null; }
+        var qrLoadPromise = null;
+        function loadQrLibrary() {
+          var lib = getQrLib();
+          if (lib) return Promise.resolve(lib);
+          if (qrLoadPromise) return qrLoadPromise;
+          var chain = null;
+          QR_CDN_SOURCES.forEach(function (src) {
+            var step = function () {
+              return loadScriptWithTimeout(src, WC_SCRIPT_TIMEOUT_MS).then(function () {
+                var l = getQrLib();
+                if (!l) throw new Error("Script QR termuat tapi global qrcode tidak ditemukan: " + src);
+                return l;
+              });
+            };
+            chain = chain ? chain.catch(step) : step();
+          });
+          qrLoadPromise = chain.then(function (l) { return l; }, function (err) {
+            qrLoadPromise = null;
+            throw err;
+          });
+          return qrLoadPromise;
+        }
+
         function connectViaWalletConnect(btn) {
           var wcBtn = btn || document.querySelector('#walletOptionList [data-wallet-wc]');
-          hideWcRetryBtn();
+          if (wcConnecting) return;
+          wcConnecting = true;
           if (wcBtn) wcBtn.disabled = true;
+          showWcQrPanel();
+          startWcQrWatchdog();
           var ready;
           if (wcProvider || getWCProviderClass()) {
             ready = Promise.resolve(getWCProviderClass());
           } else {
-            setModalFeedback("Memuat WalletConnect…");
+            setWcQrStatus("Memuat WalletConnect…");
             ready = loadWalletConnectLibrary(function (n, total) {
-              if (n > 1) setModalFeedback("Memuat WalletConnect… (percobaan " + n + " dari " + total + " — mencoba sumber CDN lain)");
+              if (n > 1) setWcQrStatus("Memuat WalletConnect… (percobaan " + n + " dari " + total + " — mencoba sumber CDN lain)");
             });
           }
           ready.then(function (WCProvider) {
-            setModalFeedback("Menyiapkan WalletConnect… modal QR / pilihan aplikasi wallet akan terbuka. Setujui koneksinya di wallet-mu.");
-            if (wcProvider) return wcProvider;
+            setWcQrStatus("Menyiapkan WalletConnect… kode QR akan muncul di sini. Setujui koneksinya di wallet-mu.");
+            if (wcProvider) { attachWcUriListener(wcProvider); return wcProvider; }
             return WCProvider.init({
               projectId: WC_PROJECT_ID,
               chains: [SEPOLIA_CHAIN],
               optionalChains: [GIWA_CHAIN],
-              showQrModal: true,
+              showQrModal: false,
               rpcMap: { 91342: RPC, 11155111: L1_RPC }
-            }).then(function (p) { wcProvider = p; return p; });
+            }).then(function (p) { wcProvider = p; attachWcUriListener(p); return p; });
           })
           .then(function (p) {
             return p.connect().then(function () {
@@ -1738,6 +2226,9 @@
             });
           })
           .catch(function (e) {
+            clearWcQrWatchdog();
+            hideWcQrPanel();
+            renderWalletOptions();
             if (!getWCProviderClass()) {
               /* Error final: semua CDN cadangan + retry otomatis sudah gagal. */
               setModalFeedback("WalletConnect gagal: library WalletConnect tidak termuat dari semua sumber CDN setelah beberapa kali percobaan — cek koneksi internetmu, lalu tekan tombol Coba lagi di bawah. Atau pakai wallet ekstensi / buka link dashboard dari browser aplikasi wallet.", "err");
@@ -1747,10 +2238,21 @@
             }
             document.getElementById("walletFallback").hidden = false;
           })
-          .then(function () { if (wcBtn) wcBtn.disabled = false; });
+          .then(function () {
+            wcConnecting = false;
+            if (wcBtn) wcBtn.disabled = false;
+          });
         }
 
         function onWalletConnected(label) {
+          /* Setiap connect / reconnect: tampilan mulai dari Dompet Terhubung milik
+             akun ini — dataset akun lain tidak ikut terbawa. */
+          viewMode = "connected";
+          var key = viewKey();
+          if (!datasets[key]) datasets[key] = blankConnDataset();
+          applyDataset(key);
+          updateViewUI();
+          renderAll();
           updateWalletInfo();
           refreshSwapBalHint();
           closeWalletModal();
@@ -1769,7 +2271,7 @@
         }
         function lockDashboard(msg) {
           account = null; chainId = null; activeProvider = null; connVia = "";
-          dashboardUnlocked = false;
+          viewMode = "connected"; /* connect berikutnya mulai lagi dari Dompet Terhubung */          dashboardUnlocked = false;
           stopLiveLoop();
           updateWalletInfo();
           document.getElementById("dashboardView").hidden = true;
@@ -1789,7 +2291,27 @@
         }
 
         document.getElementById("gateConnectBtn").addEventListener("click", openWalletModal);
+        document.getElementById("viewConnBtn").addEventListener("click", function () { setViewMode("connected"); });
+        document.getElementById("viewBotBtn").addEventListener("click", function () { setViewMode("bot"); });
+        updateViewUI();
         document.getElementById("wcRetryBtn").addEventListener("click", function () { connectViaWalletConnect(null); });
+        document.getElementById("wcQrBack").addEventListener("click", function () {
+          hideWcQrPanel();
+          renderWalletOptions();
+        });
+        document.getElementById("wcShowWallets").addEventListener("click", function () {
+          var wl = document.getElementById("wcWalletLinks");
+          wl.hidden = !wl.hidden;
+        });
+        document.getElementById("wcQrRetry").addEventListener("click", function () {
+          /* Buang provider WalletConnect lama (sesi pairing-nya bisa menggantung)
+             lalu mulai dari awal supaya kode QR yang dibuat benar-benar baru. */
+          var old = wcProvider;
+          wcProvider = null;
+          wcConnecting = false;
+          if (old && old.disconnect) { try { var dp = old.disconnect(); if (dp && dp.catch) dp.catch(function () {}); } catch (e) {} }
+          connectViaWalletConnect(null);
+        });
         document.getElementById("walletModalClose").addEventListener("click", closeWalletModal);
         modalEl.addEventListener("click", function (ev) { if (ev.target === modalEl) closeWalletModal(); });
         document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && !modalEl.hidden) closeWalletModal(); });
