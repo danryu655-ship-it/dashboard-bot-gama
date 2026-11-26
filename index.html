@@ -483,6 +483,20 @@
       .switch:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
       @media (prefers-reduced-motion: reduce) { .switch .track, .switch .knob { transition: none; } }
       .bot-note { font-size: 13px; color: var(--ink-2); margin: 12px 0 0; }
+      .bot-clarify {
+        margin-top: 14px; background: var(--brand-soft); border: 1px solid var(--brand);
+        border-radius: 8px; padding: 12px 14px; font-size: 14px; line-height: 1.55;
+      }
+      .bot-clarify strong { color: var(--ink); }
+      .bot-wallet-rule {
+        margin-top: 10px; background: var(--warn-soft); border: 1px solid var(--warn);
+        border-radius: 8px; padding: 12px 14px; font-size: 14px; line-height: 1.55;
+      }
+      .bot-wallet-rule strong { color: var(--ink); }
+      .bot-rules-box { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+      .bot-rules-box h4 { margin: 0 0 4px; font-size: 14.5px; font-weight: 700; }
+      .bot-rules-box .bot-rules-sub { font-size: 13px; color: var(--ink-2); margin: 0 0 6px; }
+      .bot-rules-list .v { white-space: normal; }
 
       /* ---------- Widget ---------- */
       .widget-view { display: none; }
@@ -611,12 +625,32 @@
                 <span class="track" aria-hidden="true"><span class="knob"></span></span><span id="botToggleLabel">Live Aktif</span>
               </button>
             </div>
+            <div class="bot-clarify" role="note">
+              <strong>Saklar ini BUKAN saklar bot trading.</strong> Saklar di atas <strong>hanya</strong> menghidupkan / mematikan <strong>Pemantauan Live dashboard</strong> — yaitu auto-refresh data tiap 60 detik di halaman ini. Mematikannya <strong>tidak</strong> mematikan bot trading, dan menghidupkannya <strong>tidak</strong> mengaktifkan bot trading untuk dompet yang sedang terhubung. Bot trading berjalan sendiri di server tiap 15 menit dan tetap jalan walau dashboard ini ditutup atau wallet diganti.
+            </div>
+            <div class="bot-wallet-rule" role="note">
+              <strong>Bot hanya berdagang otomatis dari Dompet Bot (0x10bE…52bf). Dompet lain yang terhubung TIDAK ikut ditrading otomatis oleh bot — untuk dompet lain, pakai panel Test Manual (beli/jual manual dari dompet terhubung).</strong>
+            </div>
             <ul class="rules" style="margin-top:12px;">
               <li><span class="k">Status bot</span><span class="v" id="botRowStatus">AKTIF</span></li>
               <li><span class="k">Pemantauan live dashboard</span><span class="v" id="botRowLive">Jalan · refresh 60 detik</span></li>
               <li><span class="k">Posisi dipantau</span><span class="v">8 token</span></li>
               <li><span class="k">Jeda pengecekan bot</span><span class="v">tiap 15 menit</span></li>
             </ul>
+            <div class="bot-rules-box">
+              <h4>Ringkasan Aturan Bot</h4>
+              <p class="bot-rules-sub">Aturan ini berlaku untuk trading otomatis bot di Dompet Bot — ringkasannya tampil di sini agar tidak perlu pindah ke bagian Aturan.</p>
+              <ul class="rules bot-rules-list">
+                <li><span class="k">Take Profit (TP)</span><span class="v">+10%</span></li>
+                <li><span class="k">Stop Loss (SL)</span><span class="v">−10%</span></li>
+                <li><span class="k">Beli per trade</span><span class="v">0,002 ETH</span></li>
+                <li><span class="k">Cadangan tidak disentuh</span><span class="v">0,01 ETH</span></li>
+                <li><span class="k">Beli lagi</span><span class="v">hanya jika turun ≥5% dari harga jual terakhir</span></li>
+                <li><span class="k">Cek posisi</span><span class="v">tiap 15 menit</span></li>
+                <li><span class="k">Mode trading</span><span class="v">curve saja</span></li>
+                <li><span class="k">Jika token graduated</span><span class="v">berhenti untuk token itu</span></li>
+              </ul>
+            </div>
             <p class="bot-note">Tombol di atas menjalankan / menghentikan pemantauan live dan auto-refresh di dashboard ini. Bot trading yang berjalan di latar tetap mengikuti aturan di bagian Aturan Bot — untuk menghentikannya sepenuhnya, hentikan proses bot-nya.</p>
           </div>
         </section>
