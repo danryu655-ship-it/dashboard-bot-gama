@@ -516,7 +516,7 @@
           <div class="w-label"><span class="dot"></span> Bot GAMA · GIWA Sepolia</div>
           <div class="w-balance"><span id="wBalance">0,13745744</span> <small>ETH</small></div>
           <div class="w-row"><b>8</b> posisi terbuka<span class="w-reserve"> · cadangan <b>0,01 ETH</b></span></div>
-          <div class="w-row extra">Modal per beli <b>0,002 ETH</b> · TP +10% / SL −10%</div>
+          <div class="w-row extra">Modal per beli <b>0,002 ETH</b> · TP +5% / SL −5%</div>
           <div class="w-row extra" id="wTime">Per 26 Nov 2026, 09:13 WIB</div>
         </div>
       </div>
@@ -567,7 +567,7 @@
         <header class="top" id="ringkasan">
           <div class="status-line">
             <span class="dot" aria-hidden="true"></span>
-            <span class="net">Bot aktif · cek tiap 15 menit · GIWA Sepolia Testnet · Launchpad Gamatiles</span>
+            <span class="net">Bot aktif · cek tiap 5 menit · GIWA Sepolia Testnet · Launchpad Gamatiles</span>
           </div>
           <h1>Dashboard BOT</h1>
           <p class="sub">Posisi trading Bot GAMA di GIWA Sepolia — semua koin yang sedang dipegang, lengkap dengan detail pembelian dan harga tokennya.</p>
@@ -607,11 +607,11 @@
             <div class="bot-panel-top">
               <div>
                 <div class="bot-status-line"><span class="bot-dot" id="botDot" aria-hidden="true"></span><span id="botStatusText">Pemantauan Live Aktif</span></div>
-                <p class="bot-desc" id="botStatusDesc">Bot memantau 8 posisi dan mengecek TP/SL tiap 15 menit. Pemantauan live dashboard berjalan — data diperbarui otomatis tiap 60 detik.</p>
+                <p class="bot-desc" id="botStatusDesc">Bot memantau 8 posisi dan mengecek TP/SL tiap 5 menit. Pemantauan live dashboard berjalan — data diperbarui otomatis tiap 60 detik.</p>
               </div>
             </div>
             <div class="bot-clarify" role="note">
-              <strong>Panel ini hanya menampilkan status — tidak ada saklar bot trading di dashboard ini.</strong> Dulu di sini ada saklar, tapi saklar itu pun <strong>hanya</strong> menghidupkan / mematikan <strong>Pemantauan Live dashboard</strong> — yaitu auto-refresh data tiap 60 detik di halaman ini — dan tidak pernah mengendalikan bot trading. Bot trading berjalan sendiri di server tiap 15 menit dan tetap jalan walau dashboard ini ditutup atau wallet diganti. Dompet yang terhubung di dashboard ini hanya bisa dilihat (view) dan dipakai untuk trading manual — tidak ada cara menghidupkan atau mematikan bot dari sini.
+              <strong>Panel ini hanya menampilkan status — tidak ada saklar bot trading di dashboard ini.</strong> Dulu di sini ada saklar, tapi saklar itu pun <strong>hanya</strong> menghidupkan / mematikan <strong>Pemantauan Live dashboard</strong> — yaitu auto-refresh data tiap 60 detik di halaman ini — dan tidak pernah mengendalikan bot trading. Bot trading berjalan sendiri di server tiap 5 menit dan tetap jalan walau dashboard ini ditutup atau wallet diganti. Dompet yang terhubung di dashboard ini hanya bisa dilihat (view) dan dipakai untuk trading manual — tidak ada cara menghidupkan atau mematikan bot dari sini.
             </div>
             <div class="bot-wallet-rule" role="note">
               <strong>Bot hanya berdagang otomatis dari Dompet Bot (0x10bE…52bf). Dompet lain yang terhubung TIDAK ikut ditrading otomatis oleh bot — untuk dompet lain, pakai panel Test Manual (beli/jual manual dari dompet terhubung).</strong>
@@ -620,18 +620,18 @@
               <li><span class="k">Status bot</span><span class="v" id="botRowStatus">AKTIF</span></li>
               <li><span class="k">Pemantauan live dashboard</span><span class="v" id="botRowLive">Jalan · refresh 60 detik</span></li>
               <li><span class="k">Posisi dipantau</span><span class="v">8 token</span></li>
-              <li><span class="k">Jeda pengecekan bot</span><span class="v">tiap 15 menit</span></li>
+              <li><span class="k">Jeda pengecekan bot</span><span class="v">tiap 5 menit</span></li>
             </ul>
             <div class="bot-rules-box">
               <h4>Ringkasan Aturan Bot</h4>
               <p class="bot-rules-sub">Aturan ini berlaku untuk trading otomatis bot di Dompet Bot — ringkasannya tampil di sini agar tidak perlu pindah ke bagian Aturan.</p>
               <ul class="rules bot-rules-list">
-                <li><span class="k">Take Profit (TP)</span><span class="v">+10%</span></li>
-                <li><span class="k">Stop Loss (SL)</span><span class="v">−10%</span></li>
+                <li><span class="k">Take Profit (TP)</span><span class="v">+5%</span></li>
+                <li><span class="k">Stop Loss (SL)</span><span class="v">−5%</span></li>
                 <li><span class="k">Beli per trade</span><span class="v">0,002 ETH</span></li>
                 <li><span class="k">Cadangan tidak disentuh</span><span class="v">0,01 ETH</span></li>
                 <li><span class="k">Beli lagi</span><span class="v">hanya jika turun ≥5% dari harga jual terakhir</span></li>
-                <li><span class="k">Cek posisi</span><span class="v">tiap 15 menit</span></li>
+                <li><span class="k">Cek posisi</span><span class="v">tiap 5 menit</span></li>
                 <li><span class="k">Mode trading</span><span class="v">curve saja</span></li>
                 <li><span class="k">Jika token graduated</span><span class="v">berhenti untuk token itu</span></li>
               </ul>
@@ -668,7 +668,7 @@
 
         <section id="posisi" aria-labelledby="pos-title">
           <h2 id="pos-title">Posisi yang Dipegang</h2>
-          <p class="sec-sub" id="posSub">Harga beli dihitung dari transaksi pembelian masing-masing token. Target jual (TP) +10% dan batas rugi (SL) −10% dihitung dari modal tiap posisi. AF adalah holding manual yang sudah graduasi — tidak di-TP/SL bot.</p>
+          <p class="sec-sub" id="posSub">Harga beli dihitung dari transaksi pembelian masing-masing token. Target jual (TP) +5% dan batas rugi (SL) −5% dihitung dari modal tiap posisi. AF adalah holding manual yang sudah graduasi — tidak di-TP/SL bot.</p>
           <div class="table-card">
             <table>
               <colgroup>
@@ -707,7 +707,7 @@
             </div>
             <div class="panel" id="plNotePanel">
               <h3>Catatan P/L</h3>
-              <p style="margin:0; font-size:14.5px;">Kerugian terbesar datang dari SOLANA. Ronde 1 kena stop-loss dengan realisasi −27% (−0,00054 ETH). Ronde 2 — gabungan bot + beli manual, modal 0,012 ETH — kena stop-loss lagi pada 26 Nov pukul 11:13 WIB: seluruh 2.580.059,34 SOLANA terjual senilai ±0,005805 ETH, realisasi sekitar −52% (−0,00620 ETH). SL adalah pemicu yang dicek tiap 15 menit, bukan jaminan harga jual. Posisi lain masih terbuka, jadi angka akhirnya belum final.</p>
+              <p style="margin:0; font-size:14.5px;">Kerugian terbesar datang dari SOLANA. Ronde 1 kena stop-loss dengan realisasi −27% (−0,00054 ETH). Ronde 2 — gabungan bot + beli manual, modal 0,012 ETH — kena stop-loss lagi pada 26 Nov pukul 11:13 WIB: seluruh 2.580.059,34 SOLANA terjual senilai ±0,005805 ETH, realisasi sekitar −52% (−0,00620 ETH). SL adalah pemicu yang dicek tiap 5 menit, bukan jaminan harga jual. Posisi lain masih terbuka, jadi angka akhirnya belum final.</p>
             </div>
           </div>
         </section>
@@ -853,12 +853,12 @@
               <h3>Aturan Trading</h3>
               <ul class="rules">
                 <li><span class="k">Modal per beli</span><span class="v">0,002 ETH</span></li>
-                <li><span class="k">Take Profit</span><span class="v gain">+10% · 0,0022 ETH</span></li>
-                <li><span class="k">Stop Loss</span><span class="v loss">−10% · 0,0018 ETH</span></li>
+                <li><span class="k">Take Profit</span><span class="v gain">+5% · 0,0021 ETH</span></li>
+                <li><span class="k">Stop Loss</span><span class="v loss">−5% · 0,0019 ETH</span></li>
                 <li><span class="k">Beli lagi setelah jual</span><span class="v">harga turun ≥5%</span></li>
                 <li><span class="k">Batas harian</span><span class="v">tidak ada</span></li>
                 <li><span class="k">Berhenti beli</span><span class="v">saldo ≤ 0,01 ETH</span></li>
-                <li><span class="k">Jeda pengecekan</span><span class="v">tiap 15 menit</span></li>
+                <li><span class="k">Jeda pengecekan</span><span class="v">tiap 5 menit</span></li>
                 <li><span class="k">Pengaman</span><span class="v">anti-graduasi · fee ≤2%</span></li>
               </ul>
             </div>
@@ -955,7 +955,7 @@
         </section>
 
         <footer>
-          <p><b>Catatan:</b> semua ETH dan token di halaman ini berjalan di testnet GIWA Sepolia — tidak bernilai uang asli. Stop-loss adalah pemicu yang dicek tiap 15 menit, bukan jaminan harga jual; saat harga jatuh cepat, realisasi jual bisa lebih buruk dari −10% (pernah terjadi −27% pada SOLANA ronde 1).</p>
+          <p><b>Catatan:</b> semua ETH dan token di halaman ini berjalan di testnet GIWA Sepolia — tidak bernilai uang asli. Stop-loss adalah pemicu yang dicek tiap 5 menit, bukan jaminan harga jual; saat harga jatuh cepat, realisasi jual bisa lebih buruk dari −5% (pernah terjadi −27% pada SOLANA ronde 1).</p>
           <p>Dashboard ini mengambil data langsung dari RPC GIWA Sepolia saat dibuka dan memperbaruinya tiap 60 detik (badge LIVE + jam update ada di bagian atas). Kalau koneksi ke RPC gagal, yang tampil adalah data snapshot terakhir yang terverifikasi on-chain pada 26 November 2026 pukul 09:13 WIB, dengan label snapshot yang jelas.</p>
         </footer>
       </div>
@@ -1016,7 +1016,7 @@
         var BRIDGE = "0x77b2ffc0F57598cAe1DB76cb398059cF5d10A7E7";
         var GIWA_CHAIN = 91342, GIWA_HEX = "0x164CE";
         var SEPOLIA_CHAIN = 11155111, SEPOLIA_HEX = "0xAA36A7";
-        var COST = 0.002, TP = 0.0022, SL = 0.0018, RESERVE = 0.01;
+        var COST = 0.002, TP = 0.0021, SL = 0.0019, RESERVE = 0.01;
 
         var TOKENS = [
           { sym: "PMSMS", name: "Permink", note: "", addr: "0x058169caeb6fafb931b22b960edce39bc34d4425",
@@ -1087,7 +1087,7 @@
         }
         datasets.bot = { ethBal: state.ethBal, block: null, live: false, fields: snapshotFields() };
 
-        var POS_SUB_BOT = "Harga beli dihitung dari transaksi pembelian masing-masing token. Target jual (TP) +10% dan batas rugi (SL) −10% dihitung dari modal tiap posisi. AF adalah holding manual yang sudah graduasi — tidak di-TP/SL bot.";
+        var POS_SUB_BOT = "Harga beli dihitung dari transaksi pembelian masing-masing token. Target jual (TP) +5% dan batas rugi (SL) −5% dihitung dari modal tiap posisi. AF adalah holding manual yang sudah graduasi — tidak di-TP/SL bot.";
         var POS_SUB_CONN = "Saldo token dompet terhubung di GIWA Sepolia dengan nilai jual live (quoteSell). Dompet ini tidak memakai modal, TP, atau SL bot — yang tampil murni saldo dan nilai jual saat ini.";
         var CHART_SUB_BOT = "Nilai jual sekarang (quoteSell) dibanding modal tiap posisi, dalam ETH. Garis putus-putus di tiap batang adalah modal posisi itu (0,002 ETH untuk posisi bot, 0,012 ETH untuk SOLANA, 0,1 ETH untuk AF).";
         var CHART_SUB_CONN = "Nilai jual sekarang (quoteSell) tiap token yang dipegang dompet terhubung, dalam ETH. Tidak ada garis modal di grafik ini — modal & TP/SL hanya berlaku untuk dompet bot.";
@@ -1159,8 +1159,8 @@
           if (t.graduated) return { cls: "pill-grad", txt: "SUDAH GRADUASI" };
           if (t.amt <= 0) return { cls: "pill-sold", txt: "SUDAH TERJUAL" };
           var tc = costOf(t);
-          if (t.val >= tc * 1.1) return { cls: "pill-new", txt: "TP TERCAPAI" };
-          if (t.val <= tc * 0.9) return { cls: "pill-hold", txt: "SL TERSENTUH" };
+          if (t.val >= tc * 1.05) return { cls: "pill-new", txt: "TP TERCAPAI" };
+          if (t.val <= tc * 0.95) return { cls: "pill-hold", txt: "SL TERSENTUH" };
           if (t.isNew && !state.live) return { cls: "pill-new", txt: "BARU MASUK" };
           return { cls: "pill-hold", txt: "HOLD" };
         }
@@ -1211,7 +1211,7 @@
             if (t.manual) pills += ' <span class="pill pill-manual">MANUAL</span>';
             var tpslHtml = t.graduated
               ? '<span class="curve-info">Tidak di-TP/SL bot — sudah graduasi</span>'
-              : '<span class="tpsl">TP <span class="tp">' + fmtID(tc * 1.1, 4) + '</span> · SL <span class="sl">' + fmtID(tc * 0.9, 4) + "</span></span>";
+              : '<span class="tpsl">TP <span class="tp">' + fmtID(tc * 1.05, 4) + '</span> · SL <span class="sl">' + fmtID(tc * 0.95, 4) + "</span></span>";
             html += "<tr>" +
               '<td class="cell-tok"><div class="tok"><span class="tok-badge">' + esc(t.sym.slice(0, 2)) + "</span><span>" +
               '<span class="tok-name">' + esc(t.sym) + "</span><br />" +
