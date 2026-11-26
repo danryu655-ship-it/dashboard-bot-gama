@@ -406,6 +406,7 @@
       .wc-opt .wc-name { font-weight: 700; font-size: 15.5px; display: block; line-height: 1.25; }
       .wc-opt .wc-desc { font-size: 12.5px; color: var(--ink-2); display: block; }
       .wc-none { font-size: 14px; color: var(--ink-2); background: var(--surface-2); border: 1px dashed var(--line); border-radius: 10px; padding: 12px 14px; }
+      .wc-retry { margin-top: 10px; }
       .wc-feedback { font-size: 13.5px; margin-top: 12px; min-height: 20px; color: var(--ink-2); white-space: pre-wrap; word-break: break-word; }
       .wc-feedback.err { color: var(--loss); }
       .wc-feedback.ok { color: var(--gain); }
@@ -916,6 +917,7 @@
         <p class="wc-sub">Pilih cara menghubungkan wallet. Dashboard hanya menerima alamat publikmu — seed phrase / private key tidak pernah diminta, dan setiap transaksi tetap kamu tanda tangani sendiri di wallet-mu.</p>
         <div class="wc-list" id="walletOptionList"></div>
         <div class="wc-feedback" id="walletModalFeedback" role="status"></div>
+        <button class="btn btn-primary btn-block wc-retry" id="wcRetryBtn" type="button" hidden>Coba lagi muat WalletConnect</button>
         <div class="wc-fallback" id="walletFallback" hidden>
           <p class="wc-fb-title">Tidak ada wallet terdeteksi di browser ini?</p>
           <ol class="wc-steps">
@@ -1486,7 +1488,8 @@
            Pilihan koneksi: (1) wallet yang mengumumkan diri via EIP-6963 (MetaMask,
            Rabby, Coinbase Wallet, dll.), (2) window.ethereum lama bila ada,
            (3) WalletConnect (QR / deep-link) via @walletconnect/ethereum-provider
-           UMD yang dimuat malas dari CDN. WC_PROJECT_ID di bawah adalah Project ID
+           UMD yang dimuat malas dari beberapa CDN cadangan (lihat pemuat di bawah).
+           WC_PROJECT_ID di bawah adalah Project ID
            contoh publik dari dokumentasi WalletConnect — terverifikasi aktif lewat
            RPC proxy WalletConnect; bisa diganti Project ID sendiri dari Reown Cloud
            tanpa mengubah kode lain. */
@@ -1523,8 +1526,13 @@
           requestWalletAnnouncements();
           renderWalletOptions();
           setModalFeedback("");
+          hideWcRetryBtn();
           modalEl.hidden = false;
           document.body.style.overflow = "hidden";
+          /* Muat library WalletConnect di latar sejak modal dibuka — diam-diam,
+             tanpa pesan error — supaya saat tombol WalletConnect diklik,
+             library-nya kemungkinan besar sudah siap. */
+          if (!getWCProviderClass()) loadWalletConnectLibrary(null).catch(function () {});
         }
         function closeWalletModal() {
           modalEl.hidden = true;
@@ -1587,6 +1595,7 @@
         }
 
         function connectWithProvider(prov, label) {
+          hideWcRetryBtn();
           if (!prov) { setModalFeedback("Wallet tidak ditemukan. Pasang ekstensi wallet atau pakai WalletConnect.", "err"); return Promise.resolve(); }
           setModalFeedback("Membuka " + label + "… setujui permintaan koneksi di wallet-mu.");
           return prov.request({ method: "eth_requestAccounts" }).then(function (accs) {
@@ -1605,48 +1614,140 @@
           });
         }
 
-        function loadScriptOnce(src, globalName) {
-          if (window[globalName]) return Promise.resolve();
+        /* ---- Pemuat library WalletConnect yang tahan gagal ----
+           Akar masalah versi sebelumnya: UMD resmi @walletconnect/ethereum-provider
+           TIDAK memasang global bernama WalletConnectEthereumProvider. Build-nya
+           mendaftarkan ekspor di window["@walletconnect/ethereum-provider"], dengan
+           kelas provider di properti .EthereumProvider (dan .default). Cek global
+           lama itu selalu gagal — "Library WalletConnectEthereumProvider tidak
+           termuat" — padahal script-nya sendiri berhasil diunduh dari CDN.
+           Pemuat di bawah ini: (1) membaca global yang benar, (2) mencoba beberapa
+           CDN berurutan (jsDelivr → unpkg → mirror Fastly jsDelivr, semuanya
+           file UMD mandiri versi 2.21.1 yang sama), (3) memberi
+           timeout per sumber, (4) mengulang seluruh rangkaian otomatis sekali lagi
+           sebelum menyerah — semua tanpa user harus me-reload halaman. */
+        var WC_CDN_SOURCES = [
+          "https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.21.1/dist/index.umd.js",
+          "https://unpkg.com/@walletconnect/ethereum-provider@2.21.1/dist/index.umd.js",
+          "https://fastly.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.21.1/dist/index.umd.js"
+        ];
+        var WC_SCRIPT_TIMEOUT_MS = 10000;
+        var WC_LOAD_ROUNDS = 2;
+
+        function getWCProviderClass() {
+          if (window.WalletConnectEthereumProvider) return window.WalletConnectEthereumProvider;
+          var ns = window["@walletconnect/ethereum-provider"];
+          if (ns) {
+            if (ns.EthereumProvider) return ns.EthereumProvider;
+            if (ns.default) return ns.default;
+          }
+          return null;
+        }
+
+        function loadScriptWithTimeout(src, timeoutMs) {
           return new Promise(function (resolve, reject) {
+            var settled = false;
             var s = document.createElement("script");
             s.src = src; s.async = true;
-            s.onload = function () { if (window[globalName]) resolve(); else reject(new Error("Library " + globalName + " tidak termuat.")); };
-            s.onerror = function () { reject(new Error("Gagal memuat library WalletConnect dari CDN — cek koneksi internet.")); };
+            var timer = setTimeout(function () {
+              if (settled) return; settled = true;
+              s.onload = s.onerror = null;
+              reject(new Error("Timeout " + timeoutMs + "ms memuat " + src));
+            }, timeoutMs);
+            s.onload = function () {
+              if (settled) return; settled = true; clearTimeout(timer); resolve();
+            };
+            s.onerror = function () {
+              if (settled) return; settled = true; clearTimeout(timer);
+              reject(new Error("Gagal memuat " + src));
+            };
             document.head.appendChild(s);
           });
         }
 
+        var wcLoadPromise = null;
+        function loadWalletConnectLibrary(onStatus) {
+          var cls = getWCProviderClass();
+          if (cls) return Promise.resolve(cls);
+          if (wcLoadPromise) return wcLoadPromise;
+          var totalAttempts = WC_CDN_SOURCES.length * WC_LOAD_ROUNDS;
+          var attemptNo = 0;
+          function tryRound(round) {
+            var chain = null;
+            WC_CDN_SOURCES.forEach(function (src) {
+              var step = function () {
+                attemptNo++;
+                if (onStatus) { try { onStatus(attemptNo, totalAttempts); } catch (e) {} }
+                return loadScriptWithTimeout(src, WC_SCRIPT_TIMEOUT_MS).then(function () {
+                  var c = getWCProviderClass();
+                  if (!c) throw new Error("Script termuat tapi global WalletConnect tidak ditemukan: " + src);
+                  return c;
+                });
+              };
+              chain = chain ? chain.catch(step) : step();
+            });
+            return chain.catch(function (err) {
+              if (round < WC_LOAD_ROUNDS) return tryRound(round + 1);
+              throw err;
+            });
+          }
+          wcLoadPromise = tryRound(1).then(function (c) { return c; }, function (err) {
+            wcLoadPromise = null; /* gagal total: percobaan berikutnya (tombol Coba lagi) mulai dari awal */
+            throw err;
+          });
+          return wcLoadPromise;
+        }
+
+        function showWcRetryBtn() { var b = document.getElementById("wcRetryBtn"); if (b) b.hidden = false; }
+        function hideWcRetryBtn() { var b = document.getElementById("wcRetryBtn"); if (b) b.hidden = true; }
+
         function connectViaWalletConnect(btn) {
-          btn.disabled = true;
-          setModalFeedback("Menyiapkan WalletConnect… modal QR / pilihan aplikasi wallet akan terbuka. Setujui koneksinya di wallet-mu.");
-          loadScriptOnce("https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.21.1/dist/index.umd.js", "WalletConnectEthereumProvider")
-            .then(function () {
-              if (wcProvider) return wcProvider;
-              return window.WalletConnectEthereumProvider.init({
-                projectId: WC_PROJECT_ID,
-                chains: [SEPOLIA_CHAIN],
-                optionalChains: [GIWA_CHAIN],
-                showQrModal: true,
-                rpcMap: { 91342: RPC, 11155111: L1_RPC }
-              }).then(function (p) { wcProvider = p; return p; });
-            })
-            .then(function (p) {
-              return p.connect().then(function () {
-                var accs = p.accounts || [];
-                account = accs[0] || null;
-                if (!account) throw new Error("WalletConnect terhubung tapi tidak mengembalikan akun.");
-                activeProvider = p;
-                connVia = "WalletConnect";
-                attachProviderListeners(p);
-                chainId = p.chainId ? Number(p.chainId) : null;
-                onWalletConnected("WalletConnect");
-              });
-            })
-            .catch(function (e) {
+          var wcBtn = btn || document.querySelector('#walletOptionList [data-wallet-wc]');
+          hideWcRetryBtn();
+          if (wcBtn) wcBtn.disabled = true;
+          var ready;
+          if (wcProvider || getWCProviderClass()) {
+            ready = Promise.resolve(getWCProviderClass());
+          } else {
+            setModalFeedback("Memuat WalletConnect…");
+            ready = loadWalletConnectLibrary(function (n, total) {
+              if (n > 1) setModalFeedback("Memuat WalletConnect… (percobaan " + n + " dari " + total + " — mencoba sumber CDN lain)");
+            });
+          }
+          ready.then(function (WCProvider) {
+            setModalFeedback("Menyiapkan WalletConnect… modal QR / pilihan aplikasi wallet akan terbuka. Setujui koneksinya di wallet-mu.");
+            if (wcProvider) return wcProvider;
+            return WCProvider.init({
+              projectId: WC_PROJECT_ID,
+              chains: [SEPOLIA_CHAIN],
+              optionalChains: [GIWA_CHAIN],
+              showQrModal: true,
+              rpcMap: { 91342: RPC, 11155111: L1_RPC }
+            }).then(function (p) { wcProvider = p; return p; });
+          })
+          .then(function (p) {
+            return p.connect().then(function () {
+              var accs = p.accounts || [];
+              account = accs[0] || null;
+              if (!account) throw new Error("WalletConnect terhubung tapi tidak mengembalikan akun.");
+              activeProvider = p;
+              connVia = "WalletConnect";
+              attachProviderListeners(p);
+              chainId = p.chainId ? Number(p.chainId) : null;
+              onWalletConnected("WalletConnect");
+            });
+          })
+          .catch(function (e) {
+            if (!getWCProviderClass()) {
+              /* Error final: semua CDN cadangan + retry otomatis sudah gagal. */
+              setModalFeedback("WalletConnect gagal: library WalletConnect tidak termuat dari semua sumber CDN setelah beberapa kali percobaan — cek koneksi internetmu, lalu tekan tombol Coba lagi di bawah. Atau pakai wallet ekstensi / buka link dashboard dari browser aplikasi wallet.", "err");
+              showWcRetryBtn();
+            } else {
               setModalFeedback("WalletConnect gagal: " + (e && e.message ? e.message : e) + " — coba lagi, atau pakai wallet ekstensi / buka link dashboard dari browser aplikasi wallet.", "err");
-              document.getElementById("walletFallback").hidden = false;
-            })
-            .then(function () { btn.disabled = false; });
+            }
+            document.getElementById("walletFallback").hidden = false;
+          })
+          .then(function () { if (wcBtn) wcBtn.disabled = false; });
         }
 
         function onWalletConnected(label) {
@@ -1688,6 +1789,7 @@
         }
 
         document.getElementById("gateConnectBtn").addEventListener("click", openWalletModal);
+        document.getElementById("wcRetryBtn").addEventListener("click", function () { connectViaWalletConnect(null); });
         document.getElementById("walletModalClose").addEventListener("click", closeWalletModal);
         modalEl.addEventListener("click", function (ev) { if (ev.target === modalEl) closeWalletModal(); });
         document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && !modalEl.hidden) closeWalletModal(); });
